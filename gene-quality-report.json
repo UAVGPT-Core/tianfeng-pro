@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-07-03T04:00:29",
+  "audited_genes": 29,
+  "grade_distribution": {
+    "fair": 17,
+    "good": 12
+  },
+  "dimension_averages": {
+    "completeness": 15.2,
+    "accuracy": 15.0,
+    "actionable": 2.1,
+    "freshness": 7.8,
+    "connectivity": 9.9,
+    "compliance": 19.0
+  },
+  "weak_patterns": [],
+  "seven_selves_health": {
+    "自感知": "strong",
+    "自协调": "online",
+    "自愈合": "online",
+    "自进化": "online",
+    "自迭代": "online",
+    "自反思": "online",
+    "自约束": "strong"
+  },
+  "quality_index": 60
+}
