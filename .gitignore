@@ -22,3 +22,7 @@ worker.log
 *.whl
 digest.log
 .DS_Store
+*.bak
+*.bak.*
+*backup*
+.git.bloated/

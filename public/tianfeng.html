@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>天锋PRO v4.5 — 世界级AI编程工具</title>
+<style>
+:root{--bg:#0a0a14;--card:#111128;--accent:#6c5ce7;--gold:#c9a24e;--green:#00d2a0;--text:#e0e0f0;--dim:#8888aa}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
+canvas#stars{position:fixed;top:0;left:0;z-index:0}
+main{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:20px}
+.hero{text-align:center;padding:80px 20px 60px}
+.hero h1{font-size:clamp(2rem,5vw,3.5rem);background:linear-gradient(135deg,var(--accent),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px}
+.hero .tagline{font-size:1.1rem;color:var(--dim);margin-bottom:8px}
+.hero .version{display:inline-block;background:var(--card);padding:6px 16px;border-radius:20px;font-size:0.85rem;color:var(--gold);border:1px solid rgba(201,162,78,0.3)}
+.stats-bar{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin:30px 0}
+.stat{background:var(--card);padding:16px 28px;border-radius:12px;text-align:center;min-width:100px;border:1px solid rgba(108,92,231,0.2)}
+.stat .num{font-size:1.8rem;font-weight:700;color:var(--accent)}
+.stat .label{font-size:0.8rem;color:var(--dim);margin-top:4px}
+.section{margin:50px 0}
+.section h2{font-size:1.4rem;margin-bottom:20px;padding-left:12px;border-left:3px solid var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:var(--card);padding:20px;border-radius:12px;border:1px solid rgba(108,92,231,0.15);transition:transform .2s,border-color .2s}
+.card:hover{transform:translateY(-2px);border-color:var(--accent)}
+.card h3{font-size:1rem;margin-bottom:8px;color:var(--gold)}
+.card p{font-size:0.85rem;color:var(--dim);line-height:1.5}
+.card .icon{font-size:1.5rem;margin-bottom:8px}
+.card .badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:0.7rem;margin-top:8px}
+.badge-green{background:rgba(0,210,160,0.15);color:var(--green)}
+.badge-purple{background:rgba(108,92,231,0.15);color:var(--accent)}
+.badge-gold{background:rgba(201,162,78,0.15);color:var(--gold)}
+.pipeline{background:var(--card);border-radius:12px;padding:24px;border:1px solid rgba(108,92,231,0.15)}
+.pipeline-steps{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.step{text-align:center;flex:1;min-width:80px;padding:12px 8px;background:rgba(108,92,231,0.08);border-radius:8px}
+.step .num{font-size:1.2rem;font-weight:700;color:var(--accent)}
+.step .name{font-size:0.75rem;color:var(--dim);margin-top:4px}
+.arrow{color:var(--accent);font-size:1.2rem}
+.terminal{background:#000;color:var(--green);padding:20px;border-radius:8px;font-family:'SF Mono',Monaco,monospace;font-size:0.85rem;line-height:1.6;overflow-x:auto}
+.terminal .prompt{color:var(--accent)}
+.terminal .cmd{color:var(--gold)}
+.terminal .out{color:var(--dim)}
+footer{text-align:center;padding:40px;color:var(--dim);font-size:0.8rem}
+a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<main>
+<div class="hero">
+  <h1>天锋PRO</h1>
+  <p class="tagline">世界级AI编程工具 · LGOX联邦第11节点</p>
+  <span class="version">v4.5 · 商品化 · 31飞轮 · 216题库</span>
+</div>
+
+<div class="stats-bar">
+  <div class="stat"><div class="num">31</div><div class="label">永动飞轮</div></div>
+  <div class="stat"><div class="num">216</div><div class="label">代码题库</div></div>
+  <div class="stat"><div class="num">五维</div><div class="label">质量评分</div></div>
+  <div class="stat"><div class="num">v7.82</div><div class="label">金字塔对齐</div></div>
+  <div class="stat"><div class="num">¥0</div><div class="label">零成本永动</div></div>
+</div>
+
+<div class="section">
+  <h2>⚡ 核心能力</h2>
+  <div class="grid">
+    <div class="card"><div class="icon">🧬</div><h3>基因驱动编程</h3><p>每行代码从LGE 79万基因库检索最佳实践，FTS5 BM25 + LGE语义双路注入</p><span class="badge badge-purple">零token</span></div>
+    <div class="card"><div class="icon">📊</div><h3>五维质量评分</h3><p>正确性·性能·安全·可读·基因密度。每次编程自动评分，S/A/B/C/D五级</p><span class="badge badge-purple">规则引擎</span></div>
+    <div class="card"><div class="icon">🔮</div><h3>自然语言→代码</h3><p>一句话生成完整项目。10类意图识别→任务分解→代码骨架→沙箱验证</p><span class="badge badge-green">零门槛</span></div>
+    <div class="card"><div class="icon">🌐</div><h3>联邦协同编程</h3><p>天工GPU(heavy)·地枢Neo4j(search)·本地M4(simple)。三路智能路由</p><span class="badge badge-gold">联邦</span></div>
+    <div class="card"><div class="icon">♟️</div><h3>代码大脑自弈</h3><p>216题库·10维度·4难度·三角色多模型思辨·沙箱验证·持续进化</p><span class="badge badge-green">每3min</span></div>
+    <div class="card"><div class="icon">🎬</div><h3>天影v2.0视频引擎</h3><p>Agent三角色·19个Skill基因库·首尾帧控制·胶片模拟·自然语言驱动</p><span class="badge badge-gold">吸收WorkRally</span></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🔄 编程流水线</h2>
+  <div class="pipeline">
+    <div class="pipeline-steps">
+      <div class="step"><div class="num">①</div><div class="name">基因感知</div></div><span class="arrow">→</span>
+      <div class="step"><div class="num">②</div><div class="name">任务分解</div></div><span class="arrow">→</span>
+      <div class="step"><div class="num">③</div><div class="name">联邦路由</div></div><span class="arrow">→</span>
+      <div class="step"><div class="num">④</div><div class="name">代码生成</div></div><span class="arrow">→</span>
+      <div class="step"><div class="num">⑤</div><div class="name">沙箱验证</div></div><span class="arrow">→</span>
+      <div class="step"><div class="num">⑥</div><div class="name">五维评分</div></div><span class="arrow">→</span>
+      <div class="step"><div class="num">⑦</div><div class="name">蒸馏纳库</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>⌨️ CLI 快速开始</h2>
+  <div class="terminal">
+<span class="out"># 安装</span>
+<span class="prompt">$</span> <span class="cmd">pip install tianfeng-pro</span>
+
+<span class="out"># 代码生成</span>
+<span class="prompt">$</span> <span class="cmd">tianfeng code</span> "实现LRU缓存O(1)get/put"
+
+<span class="out"># 自然语言→完整项目</span>
+<span class="prompt">$</span> <span class="cmd">tianfeng nlu</span> "做一个无人机巡检API服务"
+
+<span class="out"># 代码审查+五维评分</span>
+<span class="prompt">$</span> <span class="cmd">tianfeng review</span> app.py
+
+<span class="out"># 版本</span>
+<span class="prompt">$</span> <span class="cmd">tianfeng version</span>
+<span class="out">天锋PRO v4.5 — 世界级AI编程工具 · 商品化</span>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🏛️ 金字塔v7.82全对齐</h2>
+  <div class="grid">
+    <div class="card"><h3>L-1 信任根</h3><p>Git签名链·每4h提交·SHA可追溯</p><span class="badge badge-green">✅</span></div>
+    <div class="card"><h3>L1 知识层</h3><p>基因驱动·FTS5+LGE双路检索·代码蒸馏</p><span class="badge badge-green">✅</span></div>
+    <div class="card"><h3>L2 通讯层</h3><p>联邦第11节点·MCP桥·圆桌参与·自弈广播</p><span class="badge badge-green">✅</span></div>
+    <div class="card"><h3>L3 分析层</h3><p>五维质量·趋势聚合·编程数据报告</p><span class="badge badge-green">✅</span></div>
+    <div class="card"><h3>L5 行动层</h3><p>31飞轮永动·达尔文进化·七自闭环</p><span class="badge badge-green">✅</span></div>
+    <div class="card"><h3>L7 宪法层</h3><p>八红线扫描·Apache2.0合规·零成本</p><span class="badge badge-green">✅</span></div>
+  </div>
+</div>
+
+<footer>
+  <p>天锋PRO v4.5 · LGOX联邦 · AI灯塔·AI坐标</p>
+  <p>零成本·全免费·Apache 2.0 · 2035视角·10年不过时</p>
+</footer>
+</main>
+
+<script>
+// 星空粒子
+const c=document.getElementById('stars'),x=c.getContext('2d');
+let w,h,stars=[];
+function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight}
+resize();window.addEventListener('resize',resize);
+for(let i=0;i<80;i++)stars.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.5+0.5,s:Math.random()*0.3+0.1});
+function draw(){
+  x.clearRect(0,0,w,h);
+  stars.forEach(s=>{
+    x.beginPath();x.arc(s.x,s.y,s.r,0,Math.PI*2);
+    x.fillStyle=`rgba(108,92,231,${0.3+s.s*2})`;x.fill();
+    s.y-=s.s;if(s.y<0){s.y=h;s.x=Math.random()*w}
+  });
+  // 连线
+  for(let i=0;i<stars.length;i++){
+    for(let j=i+1;j<stars.length;j++){
+      const d=Math.hypot(stars[i].x-stars[j].x,stars[i].y-stars[j].y);
+      if(d<120){x.beginPath();x.moveTo(stars[i].x,stars[i].y);x.lineTo(stars[j].x,stars[j].y);
+      x.strokeStyle=`rgba(108,92,231,${0.06*(1-d/120)})`;x.stroke()}
+    }
+  }
+  requestAnimationFrame(draw)
+}
+draw();
+</script>
+</body>
+</html>

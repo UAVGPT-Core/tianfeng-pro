@@ -31,15 +31,23 @@ def auto_sync():
     for remote in REMOTES:
         try:
             env = os.environ.copy()
-            env["GIT_SSH_COMMAND"] = f"ssh -i {K} -o IdentitiesOnly=yes -o ConnectTimeout=10"
-            ok, out, err = run(["git", "push", remote["url"], "main"], timeout=60, env=env)
+            env["GIT_SSH_COMMAND"] = f"ssh -i {K} -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ServerAliveInterval=30"
+            ok, out, err = run(["git", "push", remote["url"], "main"], timeout=120, env=env)
             if not ok:
-                # Remote may be ahead — pull first then retry
-                run(["git", "pull", "--rebase", remote["url"], "main"], timeout=30, env=env)
-                ok, out, err = run(["git", "push", remote["url"], "main"], timeout=60, env=env)
-            results.append(f"{remote['name']}: {'✅' if ok else '❌ '+err[:50]}")
+                # Remote may be ahead — stash local changes, pull/rebase, pop stash, retry
+                run(["git", "fetch", remote["url"], "main"], timeout=30, env=env)
+                run(["git", "stash"], timeout=10)
+                ok_rebase, _, rebase_err = run(["git", "rebase", f"{remote['url']}/main"], timeout=30, env=env)
+                if not ok_rebase:
+                    run(["git", "rebase", "--abort"], timeout=10)
+                run(["git", "stash", "pop"], timeout=10)
+                # Stage any popped changes
+                run(["git", "add", "-A"])
+                run(["git", "commit", "-m", f"auto: sync {time.strftime('%m%d-%H%M')} stash-merge", "--allow-empty"], timeout=10)
+                ok, out, err = run(["git", "push", remote["url"], "main"], timeout=120, env=env)
+            results.append(f"{remote['name']}: {'✅' if ok else '❌ '+err[:60]}")
         except Exception as e:
-            results.append(f"{remote['name']}: {str(e)[:50]}")
+            results.append(f"{remote['name']}: {str(e)[:60]}")
     
     return " | ".join(results)
 
