@@ -13,9 +13,9 @@
   Gitee:  仓库健康·同步状态·push状态
   本地:   基因通道·LGE·天枢·cron·飞轮全绿
 """
-import json, time, os, sys, urllib.request
+import json, time, os, sys, urllib.request, subprocess
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 # 三平台端点
 TARGETS = {
@@ -30,8 +30,8 @@ TARGETS = {
         "type": "public"
     },
     "Gitee": {
-        "web":  "https://gitee.com/uavgpt/tianfeng-pro",
-        "type": "public"
+        "ssh":  "git@gitee.com",
+        "type": "ssh"
     },
     "本地·基因通道": {
         "health": "http://100.100.89.2:8790/health",
@@ -66,6 +66,23 @@ def check_url(url, timeout=8):
     except Exception as e:
         return {"ok": False, "error": str(e)[:100]}
 
+def check_ssh(host, timeout=8):
+    """Gitee SSH auth check — 比web页面更可靠, 绕过Gitee反爬403"""
+    try:
+        result = subprocess.run(
+            ["ssh", "-T", "-o", "ConnectTimeout=5", "-o", "StrictHostKeyChecking=no", host],
+            capture_output=True, text=True, timeout=timeout
+        )
+        # Strip ANSI escape codes (Gitee uses colored output)
+        import re
+        ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
+        output = ansi_escape.sub('', result.stdout + result.stderr)
+        # Gitee 成功认证返回: "Hi ...! You've successfully authenticated..."
+        ok = "successfully authenticated" in output.lower()
+        return {"ok": ok, "status": result.returncode, "detail": output.strip()[:100]}
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:100]}
+
 def check_all():
     """全平台健康检查"""
     results = {}
@@ -78,6 +95,13 @@ def check_all():
         if "health" in cfg:
             r = check_url(cfg["health"])
             status["health"] = r
+        
+        # Check SSH endpoint (Gitee)
+        if "ssh" in cfg:
+            r = check_ssh(cfg["ssh"])
+            status["ssh"] = r
+            if not r["ok"]:
+                all_ok = False
         
         # Check web endpoint
         if "web" in cfg:
@@ -119,7 +143,7 @@ def check_all():
         
         results[name] = status
     
-    return {"all_ok": all_ok, "targets": results, "time": datetime.utcnow().isoformat()}
+    return {"all_ok": all_ok, "targets": results, "time": datetime.now(tz=timezone.utc).isoformat()}
 
 def auto_heal(report):
     """自主修复检测到的问题"""
