@@ -1,0 +1,48 @@
+{
+  "天枢": {
+    "node": "天枢",
+    "hostname": "1deMac-Studio.local",
+    "timestamp": "2026-06-28T11:02:36",
+    "platform": {
+      "os": "Darwin",
+      "version": "Darwin Kernel Version 24.6.0: Tue Apr 21 20:19:12 PDT 2026; ",
+      "machine": "arm64",
+      "python": "3.9.6"
+    },
+    "hardware": {
+      "cpu_count": 14,
+      "cpu_physical": 14,
+      "memory_gb": 36.0,
+      "disk_gb": 460.4,
+      "disk_free_gb": 255.6,
+      "gpu": "Apple M4 Max",
+      "has_gpu": true,
+      "has_screen": true
+    },
+    "software": {
+      "python3": true,
+      "python": false,
+      "ollama": false,
+      "docker": false,
+      "nginx": false,
+      "node": false,
+      "git": true
+    },
+    "resources": {
+      "cpu_percent": 13.4,
+      "memory_percent": 66.3,
+      "disk_percent": 6.3,
+      "available": true
+    },
+    "roles": [
+      "display",
+      "compute",
+      "universal",
+      "worker"
+    ],
+    "load": {
+      "level": "idle",
+      "can_take": "any"
+    }
+  }
+}
