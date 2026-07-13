@@ -731,4 +731,9 @@ if __name__ == "__main__":
             print(f"耗时: {result['elapsed_ms']}ms")
 
     else:
-        ap.print_help()
+        # Default to cron mode when run without arguments (Hermes cron invokes with no args)
+        print("[pentagon] No args, defaulting to --cron mode")
+        results = run_standard_deliberation()
+        for r in results:
+            if r["overall_score"] >= 80:
+                feed_deliberation_gene(r)
