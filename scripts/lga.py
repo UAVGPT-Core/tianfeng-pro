@@ -60,7 +60,7 @@ def local_stats(conn):
     return {"total": count, "synced": synced, "local_only": count-synced, "avg_fitness": round(avg_f,3)}
 
 # ═══ 远程代理 ═══
-def remote_search(url, query, limit=5, timeout=8):
+def remote_search(url, query, limit=5, timeout=5):
     try:
         payload = json.dumps({"query": query, "n_results": limit}).encode()
         req = urllib.request.Request(f"{url}/genes/search",
@@ -85,13 +85,16 @@ def remote_write(content, gene_type="semantic", fitness=0.6):
         return None
 
 def sync_hot_genes(conn, limit=3000):
-    """从地枢拉取热基因到本地"""
+    """从地枢或天枢拉取热基因到本地"""
     queries = ["联邦 通讯 节点", "金字塔 七自", "Python 部署", "天巡 Widget",
                "LGOX 标准", "SSH 修复", "DeepSeek Ollama"]
     seen = set()
     all_genes = []
     for q in queries:
-        results = remote_search(LGE_MASTER, q, limit=30)
+        results = remote_search(LGE_MASTER, q, limit=30, timeout=4)
+        if not results:
+            # 地枢离线时从天枢拉取
+            results = remote_search(TIANSHU_LGE, q, limit=30, timeout=4)
         if results:
             for g in results:
                 gid = g.get("gene_id","")

@@ -98,27 +98,52 @@ def search_lge(query, limit=5):
         if status is False:
             continue  # 已确认离线，跳过
 
+        # 直接HTTP尝试
+        results = _try_http_search(url, query, limit)
+        if results:
+            return results
+
+    # 第四级: SSH代理到天枢（当直连全部失败时）
+    if _connectivity_cache.get(LGE_POOL[1]) is not True and _connectivity_cache.get(LGE_POOL[0]) is not True:
         try:
-            data = json.dumps({"query": query, "n_results": limit}).encode()
-            req = urllib.request.Request(url + "/genes/search", data=data,
-                                          headers={"Content-Type": "application/json"})
-            resp = urllib.request.urlopen(req, timeout=timeout_per_node)
-            results = [r.get("content", "") for r in json.loads(resp.read()).get("results", [])]
-            if results:
-                _connectivity_cache[url] = True  # 标记在线
-                print(f"  [OK] search_lge({url}) → {len(results)}条", file=__import__('sys').stderr)
-                return results
-        except urllib.error.HTTPError as e:
-            print(f"  [WARN] {url} HTTP {e.code}", file=__import__('sys').stderr)
-            if e.code == 500:
-                _connectivity_cache[url] = False  # 服务端异常，标记离线
-            continue
+            import subprocess as sp
+            qjson = json.dumps({"query": query, "n_results": limit})
+            ssh_cmd = ["ssh", "-o", "ConnectTimeout=5", "-o", "StrictHostKeyChecking=no",
+                       "a1@100.100.89.2", "curl -s --max-time 8 -X POST http://100.100.89.2:8201/genes/search -H 'Content-Type: application/json' -d " + qjson]
+            result = sp.run(ssh_cmd, capture_output=True, text=True, timeout=15)
+            if result.returncode == 0:
+                data = json.loads(result.stdout)
+                results = [r.get("content", "") for r in data.get("results", [])]
+                if results:
+                    print(f"  [OK] search_lge(SSH→天枢) → {len(results)}条", file=__import__('sys').stderr)
+                    return results
         except Exception as e:
-            print(f"  [WARN] {url}不可达: {str(e)[:40]}", file=__import__('sys').stderr)
-            _connectivity_cache[url] = False  # 标记离线
-            continue
+            print(f"  [WARN] SSH天枢代理失败: {str(e)[:50]}", file=__import__('sys').stderr)
 
     return []  # 所有节点都不可达
+
+
+def _try_http_search(url, query, limit):
+    """直接HTTP搜索LGE节点"""
+    try:
+        data = json.dumps({"query": query, "n_results": limit}).encode()
+        req = urllib.request.Request(url + "/genes/search", data=data,
+                                      headers={"Content-Type": "application/json"})
+        resp = urllib.request.urlopen(req, timeout=5)
+        results = [r.get("content", "") for r in json.loads(resp.read()).get("results", [])]
+        if results:
+            _connectivity_cache[url] = True
+            print(f"  [OK] search_lge({url}) → {len(results)}条", file=__import__('sys').stderr)
+            return results
+        _connectivity_cache[url] = True
+    except urllib.error.HTTPError as e:
+        print(f"  [WARN] {url} HTTP {e.code}", file=__import__('sys').stderr)
+        if e.code == 500:
+            _connectivity_cache[url] = False
+    except Exception as e:
+        print(f"  [WARN] {url}不可达: {str(e)[:40]}", file=__import__('sys').stderr)
+        _connectivity_cache[url] = False
+    return None
 
 
 def extract_coding_genes(task_description):
