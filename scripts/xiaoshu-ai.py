@@ -343,6 +343,62 @@ async def auto_evolve(request: Request):
     except Exception as e:
         return JSONResponse({"status":"write_failed","error":str(e)[:100],"score":score})
 
+# ═══ Wind金融引擎代理(天枢:18770→SSH隧道localhost:18770) ═══
+# Wind引擎v2.0路由格式: /quote/CODE · /kline/CODE/周期 · /market/scan · /futures/dashboard
+WIND_PROXY = "http://localhost:18770"
+
+def _wind_fetch(path: str, timeout: int = 15):
+    """底层Wind请求·自动缓存"""
+    try:
+        req = urllib.request.Request(f"{WIND_PROXY}{path}")
+        resp = urllib.request.urlopen(req, timeout=timeout)
+        return json.loads(resp.read())
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/api/wind/health")
+async def wind_health():
+    return JSONResponse(_wind_fetch("/health", 5))
+
+@app.get("/api/wind/quote")
+async def wind_quote(symbol: str = ""):
+    if not symbol:
+        return JSONResponse({"error": "symbol required"}, status_code=400)
+    return JSONResponse(_wind_fetch(f"/quote/{symbol}"))
+
+@app.get("/api/wind/kline")
+async def wind_kline(symbol: str = "", period: str = "daily"):
+    if not symbol:
+        return JSONResponse({"error": "symbol required"}, status_code=400)
+    p = "日" if period == "daily" else "周" if period == "weekly" else "月"
+    return JSONResponse(_wind_fetch(f"/kline/{symbol}/{p}", 20))
+
+@app.get("/api/wind/market")
+async def wind_market():
+    """全市场扫描(可能较慢)"""
+    return JSONResponse(_wind_fetch("/market/scan", 30))
+
+@app.get("/api/wind/futures")
+async def wind_futures():
+    """期货仪表盘"""
+    return JSONResponse(_wind_fetch("/futures/dashboard", 30))
+
+@app.get("/api/wind/index")
+async def wind_index(code: str = "000001.SH"):
+    return JSONResponse(_wind_fetch(f"/index/{code}"))
+
+@app.get("/api/wind/financial")
+async def wind_financial(symbol: str = ""):
+    if not symbol:
+        return JSONResponse({"error": "symbol required"}, status_code=400)
+    return JSONResponse(_wind_fetch(f"/financial/{symbol}"))
+
+@app.get("/api/wind/search")
+async def wind_search(q: str = ""):
+    if not q:
+        return JSONResponse({"error": "q required"}, status_code=400)
+    return JSONResponse(_wind_fetch(f"/search/{q}"))
+
 @app.get("/health")
 async def health():
     gn = f"{_gene_cache['count']//10000}万+"
