@@ -33,6 +33,10 @@ def auto_sync():
             env = os.environ.copy()
             env["GIT_SSH_COMMAND"] = f"ssh -i {K} -o IdentitiesOnly=yes -o ConnectTimeout=10"
             ok, out, err = run(["git", "push", remote["url"], "main"], timeout=60, env=env)
+            if not ok:
+                # Remote may be ahead — pull first then retry
+                run(["git", "pull", "--rebase", remote["url"], "main"], timeout=30, env=env)
+                ok, out, err = run(["git", "push", remote["url"], "main"], timeout=60, env=env)
             results.append(f"{remote['name']}: {'✅' if ok else '❌ '+err[:50]}")
         except Exception as e:
             results.append(f"{remote['name']}: {str(e)[:50]}")
