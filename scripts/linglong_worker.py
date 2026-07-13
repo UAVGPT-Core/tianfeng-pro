@@ -27,7 +27,8 @@ LINGLONG_BRIDGE = "http://127.0.0.1:8765"
 OLLAMA = "http://localhost:11434/api/generate"
 LGA = "http://127.0.0.1:8202"
 NODE_NAME = "灵龙"
-POLL_INTERVAL = 15  # 秒
+POLL_INTERVAL = 15  # 秒 (legacy poll模式)
+SSE_RECONNECT = 3    # SSE断连重连间隔(秒)
 DATA_DIR = Path.home() / "lgox-ops/data/worker"
 STATE_FILE = DATA_DIR / "worker_state.json"
 PROCESSED_FILE = DATA_DIR / "processed_ids.txt"
@@ -46,7 +47,7 @@ SEVEN_SELF = {
 }
 
 def log(msg, level="INFO"):
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
 
 def init():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -153,6 +154,92 @@ def process_message(msg):
         mark_processed(msg_id)
         log(f"✅ 已处理 {msg_id[:12]}")
 
+def sse_loop():
+    """SSE模式——零轮询·事件驱动。断连秒切poll，定时重试SSE"""
+    log("🧬 灵龙Worker·弹性SSE模式启动")
+    log(f"   优先: {TIANSHU_BRIDGE}/messages/stream?node={parse.quote(NODE_NAME)}")
+    log(f"   降级: poll(${POLL_INTERVAL}s)")
+    log(f"   七自: {'·'.join(SEVEN_SELF.keys())}")
+
+    total_processed = 0
+    last_sse_attempt = 0
+    sse_active = False
+
+    while True:
+        # 定时尝试SSE (每5分钟)
+        now = time.time()
+        if not sse_active and now - last_sse_attempt > 300:
+            last_sse_attempt = now
+            try:
+                sse_url = f"{TIANSHU_BRIDGE}/messages/stream?node={parse.quote(NODE_NAME)}"
+                req = request.Request(sse_url, headers={
+                    "Accept": "text/event-stream",
+                    "User-Agent": "linglong-worker/1.0",
+                    "Cache-Control": "no-cache"
+                })
+                resp = request.urlopen(req, timeout=5)
+                # 连上了！切到SSE流模式
+                sse_active = True
+                log(f"🔗 SSE已激活")
+                consecutive_errors = 0
+
+                event_type = ""
+                event_data = ""
+                for raw_line in resp:
+                    line = raw_line.decode("utf-8", errors="replace").rstrip("\n").rstrip("\r")
+                    if line == "":
+                        if event_data and event_type in ("message", "new_message", ""):
+                            try:
+                                msg = json.loads(event_data)
+                                if (msg.get("type") in ("ROUNDTABLE", "CONSENSUS_QUESTION", "TASK")
+                                        and msg.get("msg_id", "") not in load_processed()
+                                        and msg.get("from") != NODE_NAME):
+                                    process_message(msg)
+                                    total_processed += 1
+                            except json.JSONDecodeError:
+                                pass
+                        event_type = ""
+                        event_data = ""
+                        continue
+                    if line.startswith("event:"):
+                        event_type = line[6:].strip()
+                    elif line.startswith("data:"):
+                        event_data = line[5:].strip()
+
+                # SSE流结束→切回poll
+                log("SSE流关闭→切poll", "WARN")
+                sse_active = False
+
+            except Exception as e:
+                # SSE不可用→秒切poll(不做无谓重试)
+                if not sse_active:
+                    log(f"SSE不可用→poll模式 ({str(e)[:50]})", "WARN")
+                sse_active = False
+
+        # Poll模式 (SSE不可用时的降级)
+        if not sse_active:
+            try:
+                req = request.Request(
+                    f"{TIANSHU_BRIDGE}/messages/inbox?node={parse.quote(NODE_NAME)}",
+                    headers={"User-Agent": "linglong-worker/1.0"})
+                resp = request.urlopen(req, timeout=10)
+                data = json.loads(resp.read())
+                msgs = data.get("messages", data) if isinstance(data, dict) else data
+                msgs = msgs if isinstance(msgs, list) else []
+
+                targets = [m for m in msgs if m.get("type") in ("ROUNDTABLE", "CONSENSUS_QUESTION", "TASK")
+                          and m.get("from") != NODE_NAME
+                          and m.get("msg_id", "") not in load_processed()]
+
+                for msg in targets:
+                    process_message(msg)
+                    total_processed += 1
+
+            except Exception as e:
+                pass  # poll失败也静默·避免日志洪泛
+
+        time.sleep(POLL_INTERVAL if not sse_active else 0.1)
+
 def poll_loop():
     """主循环——七自闭环"""
     log("🧬 灵龙Worker启动·七自闭环")
@@ -213,20 +300,25 @@ def poll_loop():
         time.sleep(POLL_INTERVAL)
 
 if __name__ == "__main__":
-    cmd = sys.argv[1] if len(sys.argv) > 1 else "start"
+    init()
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "sse"
+    mode = "sse"
 
-    if cmd == "start":
-        init()
-        poll_loop()
-    elif cmd == "health":
+    # 解析 --mode xxx 或直接 sse/poll/start/health/once
+    for arg in sys.argv[1:]:
+        if arg.startswith("--mode="):
+            mode = arg.split("=")[1]
+        elif arg in ("sse", "poll", "start", "health", "once"):
+            mode = arg
+
+    if mode == "health":
         try:
             state = json.load(STATE_FILE.open())
             print(json.dumps(state, ensure_ascii=False, indent=2))
         except:
             print('{"status":"no data"}')
-    elif cmd == "once":
-        init()
-        # 单次执行(测试用)
+    elif mode == "once":
+        # 单次poll(测试用)
         req = request.Request(
             f"{TIANSHU_BRIDGE}/messages/inbox?node={request.quote(NODE_NAME)}",
             headers={"User-Agent": "linglong-worker/1.0"})
@@ -239,3 +331,9 @@ if __name__ == "__main__":
         log(f"发现{len(targets)}条待处理")
         for msg in targets:
             process_message(msg)
+    elif mode == "poll" or mode == "start":
+        log("⚠ 使用legacy poll模式(SSE={})".format("poll" if mode == "poll" else "default"))
+        poll_loop()
+    else:
+        # 默认SSE模式
+        sse_loop()

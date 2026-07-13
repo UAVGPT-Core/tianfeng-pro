@@ -110,6 +110,8 @@ class DocsEngine:
         INDEX_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(INDEX_FILE, "w") as f:
             json.dump({"docs": self.docs, "df": dict(self.word_df), "updated": time.time()}, f, ensure_ascii=False)
+
+    def rebuild(self):
         """全量重建索引"""
         docs = []
         word_df = Counter()
@@ -138,10 +140,7 @@ class DocsEngine:
         self.word_df = word_df
         self.total_docs = len(docs)
         self.avg_len = sum(d["size"] for d in docs) / max(self.total_docs, 1)
-
-        INDEX_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(INDEX_FILE, "w") as f:
-            json.dump({"docs": docs, "df": dict(word_df), "updated": time.time()}, f, ensure_ascii=False)
+        self._save_index()
 
     def search(self, query: str, top_k: int = 5) -> list:
         """BM25搜索"""

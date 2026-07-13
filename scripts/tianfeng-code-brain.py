@@ -405,7 +405,7 @@ def extract_code(text, lang="python"):
 def verify_code(code, lang="python"):
     """验证代码质量"""
     results = {"compile": None, "lint": None, "errors": []}
-    if lang == "python":
+    if lang in ("python", "py"):
         try:
             compile(code, "<gen>", "exec")
             results["compile"] = "pass"
@@ -576,13 +576,17 @@ def update_adaptive_state(dim, difficulty, passed, score):
     else:
         dim_state["streak"] = min(0, dim_state["streak"]) - 1  # 负向累计
         # 连败2题降级
-        if dim_state["streak"] <= -2 and difficulty != "easy":
-            levels = ["easy", "medium", "hard", "extreme"]
-            idx = levels.index(difficulty)
-            if idx > 0:
-                dim_state["level"] = levels[idx - 1]
+        if dim_state["streak"] <= -2:
+            if difficulty != "easy":
+                levels = ["easy", "medium", "hard", "extreme"]
+                idx = levels.index(difficulty)
+                if idx > 0:
+                    dim_state["level"] = levels[idx - 1]
+                    dim_state["streak"] = 0
+                    log(f"  ⬇️ {dim} 降级: {difficulty} → {levels[idx-1]}")
+            else:
+                # Easy级别无法降级，重置负连胜防止无限累积
                 dim_state["streak"] = 0
-                log(f"  ⬇️ {dim} 降级: {difficulty} → {levels[idx-1]}")
 
     state["history"].append({
         "time": datetime.now().isoformat(),
