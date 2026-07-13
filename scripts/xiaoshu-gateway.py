@@ -15,6 +15,7 @@ import json, sys, os, time
 import urllib.request, urllib.error
 
 BASE = "http://localhost:8001"
+WIND_BASE = "http://localhost:18770"  # 天枢Wind金融引擎·SSH隧道
 FACTS_URL = f"{BASE}/api/facts"
 HEALTH_URL = f"{BASE}/health"
 PYRAMID_URL = f"{BASE}/api/pyramid-status"
