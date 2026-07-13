@@ -26,13 +26,17 @@ NODE_PATHS = {
     ],
     "织网": [
         {"name": "直连", "host": "100.127.112.128", "port": 22222, "type": "tcp", "timeout": 5, "prio": 1},
-        {"name": "跳板", "host": "100.127.112.128", "type": "ssh", "alias": "zhiwang-via-tianshu", "timeout": 10, "prio": 2},
+        {"name": "联邦桥", "host": "100.127.112.128", "port": 8765, "type": "http", "endpoint": "/health", "timeout": 5, "prio": 2},
+        {"name": "跳板", "host": "100.127.112.128", "type": "ssh", "alias": "zhiwang-via-tianshu", "timeout": 10, "prio": 3},
     ],
     "太一": [
         {"name": "SSH", "host": "100.103.193.98", "port": 22, "type": "tcp", "timeout": 3, "prio": 1},
     ],
     "天玑": [
-        {"name": "跳板", "host": "100.122.142.74", "type": "ssh", "alias": "tianji-via-tianshu", "timeout": 10, "prio": 1},
+        {"name": "直连TCP", "host": "100.122.142.74", "port": 22, "type": "tcp", "timeout": 5, "prio": 1},
+        {"name": "直连SSH", "host": "100.122.142.74", "type": "ssh", "alias": "tianji", "timeout": 10, "prio": 2},
+        {"name": "联邦桥", "host": "100.122.142.74", "port": 8765, "type": "http", "endpoint": "/health", "timeout": 5, "prio": 3},
+        {"name": "跳板", "host": "100.122.142.74", "type": "ssh", "alias": "tianji-via-tianshu", "timeout": 10, "prio": 4},
     ],
 }
 

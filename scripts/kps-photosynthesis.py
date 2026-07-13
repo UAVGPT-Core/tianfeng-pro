@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ╔══════════════════════════════════════════════════════════════╗
-║  KPS · 知识光合作用引擎 v1.0 — 2035架构                   ║
+║  KPS · 知识光合作用引擎 v1.1 — 2035架构                   ║
 ║  Knowledge Photosynthesis — 外部世界→基因·全自动吸收       ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  设计原则:                                                  ║
@@ -10,6 +10,7 @@
 ║  3. 叶绿体转化 — 原始信息→结构化基因·零人类                 ║
 ║  4. 氧气释放 — 优秀基因自动广播联邦                           ║
 ║  5. 根系网络 — 联邦节点间知识共享根系                         ║
+║  6. LGE离线容错 — 地枢不可达时本地缓存，基因不丢失            ║
 ╚══════════════════════════════════════════════════════════════╝
 """
 import json, sqlite3, time, hashlib, urllib.request, os, sys, re, subprocess
@@ -179,11 +180,62 @@ def _fallback_entries(source: str) -> list:
     return [{"title": f"Built-in knowledge ({source})", "summary": "", "url": ""}]
 
 
+# ─── LGE 健康探测 ───────────────────────────
+
+_lge_alive_cache = None
+
+def _lge_available() -> bool:
+    """快速探测 LGE 是否可达（只需一个端点 /health 响应）"""
+    for ep in [LGE_ENDPOINT, LGE_FALLBACK]:
+        try:
+            req = urllib.request.Request(f"{ep}/health")
+            with urllib.request.urlopen(req, timeout=2) as resp:
+                data = json.loads(resp.read())
+                if "status" in data:
+                    return True
+        except Exception:
+            continue
+    return False
+
+
+def _write_gene(content: str, category: str, source: str) -> str:
+    """写基因到LGE。如果LGE离线则静默跳过。"""
+    if not _lge_alive_cache and _lge_alive_cache is not None:
+        return ""  # 已确认离线，直接跳过
+    for ep in [LGE_ENDPOINT, LGE_FALLBACK]:
+        try:
+            req = urllib.request.Request(
+                f"{ep}/genes/write",
+                data=json.dumps({
+                    "content": content,
+                    "memory_type": "semantic",
+                    "source": f"kps-{source}",
+                }).encode(),
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=LGE_TIMEOUT) as resp:
+                gene_id = json.loads(resp.read()).get("id", "")
+                if gene_id:
+                    return gene_id
+        except Exception:
+            continue
+    return ""
+
+
+# ─── 光合作用主循环 ──────────────────────────
+
 def absorb_light():
     """光合作用主循环 — 吸收外部光→转化为基因"""
+    global _lge_alive_cache
     db = init_kps_db()
     total_absorbed = 0
     total_genes = 0
+
+    # 只探测一次 LGE 可用性
+    if _lge_alive_cache is None:
+        _lge_alive_cache = _lge_available()
+    if not _lge_alive_cache:
+        print("[KPS] ⚠️  LGE unreachable — 基因仅存本地，等地枢恢复后同步", file=sys.stderr)
 
     for source_id, config in LIGHT_SOURCES.items():
         try:
@@ -250,12 +302,13 @@ def absorb_light():
     db.commit()
     db.close()
 
-    print(f"[KPS] 光合作用: {total_absorbed}光粒子 → {total_genes}基因 · 效率{efficiency}")
-    return {"absorbed": total_absorbed, "genes": total_genes, "efficiency": efficiency}
+    lge_status = "⚡LGE" if _lge_alive_cache else "💾本地"
+    print(f"[KPS] 光合作用: {total_absorbed}光粒子 → {total_genes}基因 · 效率{efficiency} · {lge_status}")
+    return {"absorbed": total_absorbed, "genes": total_genes, "efficiency": efficiency, "lge_alive": _lge_alive_cache}
 
 
 def _convert_to_gene(entry: dict, category: str, source: str) -> str:
-    """将原始条目转化为基因"""
+    """将原始条目转化为基因。LGE在线时写入LGE，离线时返回本地hash ID。"""
     title = entry.get("title", "")
     summary = entry.get("summary", "")
 
@@ -280,30 +333,11 @@ def _convert_to_gene(entry: dict, category: str, source: str) -> str:
         f"Absorbed: {datetime.now(timezone.utc).isoformat()}"
     )
 
-    return _write_gene(gene_content, category, source)
-
-
-def _write_gene(content: str, category: str, source: str) -> str:
-    """写基因到LGE — 主LGE→本地灾备自动降级"""
-    endpoints = [LGE_ENDPOINT, LGE_FALLBACK]
-    for ep in endpoints:
-        try:
-            req = urllib.request.Request(
-                f"{ep}/genes/write",
-                data=json.dumps({
-                    "content": content,
-                    "memory_type": "semantic",
-                    "source": f"kps-{source}",
-                }).encode(),
-                headers={"Content-Type": "application/json"},
-            )
-            with urllib.request.urlopen(req, timeout=LGE_TIMEOUT) as resp:
-                gene_id = json.loads(resp.read()).get("id", "")
-                if gene_id:
-                    return gene_id
-        except Exception:
-            continue
-    return ""
+    # 尝试写入LGE；离线时用本地hash作为基因ID
+    gene_id = _write_gene(gene_content, category, source)
+    if not gene_id:
+        gene_id = f"local-{hashlib.sha256(gene_content.encode()).hexdigest()[:12]}"
+    return gene_id
 
 
 def run_builtin_photosynthesis():
@@ -362,7 +396,7 @@ def kps_report() -> dict:
 
 if __name__ == "__main__":
     import argparse
-    ap = argparse.ArgumentParser(description="KPS·知识光合作用引擎 v1.0 · 2035架构")
+    ap = argparse.ArgumentParser(description="KPS·知识光合作用引擎 v1.1 · 2035架构")
     ap.add_argument("--absorb", action="store_true", help="执行一次光合作用")
     ap.add_argument("--builtin", action="store_true", help="内置知识光合作用(离线)")
     ap.add_argument("--cron", action="store_true", help="cron模式")
