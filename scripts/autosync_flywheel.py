@@ -6,8 +6,8 @@ from pathlib import Path
 R = Path.home() / "lgox-ops"
 K = Path.home() / ".ssh/id_ed25519"
 REMOTES = [
-    {"name": "GitHub", "url": "git@github.com:UAVGPT-Core/tianfeng-pro.git"},
-    {"name": "Gitee",  "url": "https://uavgpt:PLACEHOLDER@gitee.com/uavgpt/tianfeng-pro.git"},
+    {"name": "GitHub", "url": "git@github.com:UAVGPT-Core/tianfeng-pro.git", "type": "ssh"},
+    {"name": "Gitee",  "url": "git@gitee.com:uavgpt/tianfeng-pro.git", "type": "ssh"},
 ]
 
 def run(cmd_list, cwd=R, timeout=30, env=None):
@@ -31,18 +31,8 @@ def auto_sync():
     for remote in REMOTES:
         try:
             env = os.environ.copy()
-            if remote["name"] == "GitHub":
-                env["GIT_SSH_COMMAND"] = f"ssh -i {K} -o IdentitiesOnly=yes -o ConnectTimeout=10"
-                ok, out, err = run(["git", "push", "origin", "main"], timeout=60, env=env)
-            else:
-                # Gitee HTTPS push with token from env
-                gt = os.environ.get("GITEE_TOKEN", "")
-                if not gt:
-                    results.append(f"Gitee: 缺token")
-                    continue
-                gitee_url = remote["url"].replace("PLACEHOLDER", gt)
-                ok, out, err = run(["git", "push", gitee_url, "main"], timeout=60)
-            
+            env["GIT_SSH_COMMAND"] = f"ssh -i {K} -o IdentitiesOnly=yes -o ConnectTimeout=10"
+            ok, out, err = run(["git", "push", remote["url"], "main"], timeout=60, env=env)
             results.append(f"{remote['name']}: {'✅' if ok else '❌ '+err[:50]}")
         except Exception as e:
             results.append(f"{remote['name']}: {str(e)[:50]}")
