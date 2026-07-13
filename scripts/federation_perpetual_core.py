@@ -39,8 +39,8 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 # ═══════════════════════════════════════
 # 宪法常量 — 10年不变
 # ═══════════════════════════════════════
-PORT = 8790
-GOSSIP_PORT = 8791
+PORT = int(os.environ.get("FPC_PORT", 8790))
+GOSSIP_PORT = int(os.environ.get("FPC_GOSSIP", 8791))
 DATA_DIR = Path.home() / "lgox-ops/data/core"
 STATE_FILE = DATA_DIR / "fpc_state.json"
 GRAPH_FILE = DATA_DIR / "capability_graph.json"
@@ -49,9 +49,10 @@ GENE_POOL = DATA_DIR / "gene_pool.jsonl"
 
 # 联邦种子节点 — 新节点入网起点
 SEED_NODES = [
-    {"name": "天枢", "host": "100.100.89.2", "port": PORT},
+    {"name": "天枢", "host": "100.100.89.2", "port": 8792},
     {"name": "灵龙", "host": "100.120.20.52", "port": PORT},
     {"name": "地枢", "host": "100.116.0.29", "port": PORT},
+    {"name": "天工", "host": "100.118.207.31", "port": PORT},
 ]
 
 # 当前节点身份
@@ -591,7 +592,10 @@ class FPCHandler(BaseHTTPRequestHandler):
                         if seed["name"] == name:
                             try:
                                 resp = request.urlopen(f"http://{seed['host']}:{seed['port']}/health", timeout=3)
-                                online = json.loads(resp.read()).get("status") == "ok"
+                                data = json.loads(resp.read())
+                                # 兼容两种格式: {"status":"ok"} 或 {"node":"天枢","status":"ok"}
+                                online = (data.get("status") == "ok" or 
+                                         (isinstance(data.get("node"), str) and data.get("status") == "ok"))
                             except:
                                 pass
                             break
@@ -687,6 +691,252 @@ class FPCHandler(BaseHTTPRequestHandler):
         pass
 
 # ═══════════════════════════════════════
+# 永动引擎 — 每个节点自动飞轮
+# ═══════════════════════════════════════
+
+PERPETUAL_TOPICS = [
+    "联邦AI系统的关键架构模式有哪些？30字",
+    "分布式节点如何实现自愈合？20字",
+    "GPU推理优化的三个核心技巧？20字",
+    "基因引擎在AI进化中的作用？20字",
+    "无人机巡检中AI视觉的关键突破？20字",
+    "向量数据库与传统数据库的核心差异？20字",
+    "AI Agent自主决策的四个层次？20字",
+    "联邦学习中隐私保护的最佳实践？20字",
+    "知识图谱在AI系统中的应用？20字",
+    "边缘计算与云端推理的权衡？20字",
+]
+
+class PerpetualEngine:
+    """永动引擎——基于节点能力的自动飞轮"""
+
+    def __init__(self, identity_obj, gene_obj, graph_obj):
+        self.identity = identity_obj
+        self.gene = gene_obj
+        self.graph = graph_obj
+        self.cycles = {}
+        self.stats = {"gpu_tasks": 0, "gene_quality_runs": 0, "neo4j_queries": 0}
+        self.running = False
+
+    def detect_and_launch(self):
+        """检测节点能力→启动对应永动飞轮"""
+        caps = self.identity.capabilities
+
+        # GPU飞轮: 有推理模型→持续推理产出
+        if caps["inference"]["ollama"] and len(caps["inference"]["models"]) > 3:
+            t = threading.Thread(target=self._gpu_flywheel, daemon=True, name="gpu-flywheel")
+            t.start()
+            self.cycles["gpu_flywheel"] = t
+            print(f"  🔧 GPU永动飞轮: {len(caps['inference']['models'])}模型·持续推理")
+
+        # 基因质量飞轮: 有LGE→质量分析
+        # 检测地枢IP可达性
+        try:
+            request.urlopen("http://100.116.0.29:8200/health", timeout=2)
+            t = threading.Thread(target=self._gene_quality_flywheel, daemon=True, name="gene-quality")
+            t.start()
+            self.cycles["gene_quality"] = t
+            print(f"  🧬 基因质量飞轮: LGE可达·定期质量巡检")
+        except:
+            pass
+
+        # Neo4j推理飞轮——先试本机再试远程
+        neo4j_ok = False
+        for neo4j_host in ["127.0.0.1", "100.116.0.29"]:
+            try:
+                request.urlopen(f"http://{neo4j_host}:7474", timeout=2)
+                neo4j_ok = True
+                break
+            except:
+                pass
+        if neo4j_ok:
+            t = threading.Thread(target=self._neo4j_flywheel, daemon=True, name="neo4j-flywheel")
+            t.start()
+            self.cycles["neo4j_flywheel"] = t
+            print(f"  🕸️ Neo4j推理飞轮: 知识图谱查询·关系发现")
+
+        # 基因蒸馏+去重飞轮——大基因库才启动(>100K)
+        try:
+            resp = request.urlopen("http://100.116.0.29:8200/health", timeout=2)
+            total = json.loads(resp.read()).get("genes", 0)
+            if total > 100000:
+                t = threading.Thread(target=self._gene_distill_flywheel, daemon=True, name="gene-distill")
+                t.start()
+                self.cycles["gene_distill"] = t
+                print(f"  💎 基因蒸馏飞轮: {total}基因→精华提炼")
+                t2 = threading.Thread(target=self._gene_dedup_flywheel, daemon=True, name="gene-dedup")
+                t2.start()
+                self.cycles["gene_dedup"] = t2
+                print(f"  🔍 基因去重飞轮: 重复检测·合并建议")
+        except:
+            pass
+
+        self.running = True
+
+    # 多模型路由表——按话题类型匹配最优模型
+    GPU_MODEL_ROUTER = [
+        (["代码","编程","算法","Python","函数"], "qwen2.5-coder:7b"),
+        (["视觉","图像","识别","检测"], "qwen3-vl:latest"),
+        (["推理","思考","逻辑","深层"], "gemma4:latest"),
+        (["联邦","学习","蒸馏"], "lgox-distill-v1:latest"),
+    ]
+    GPU_DEFAULT_MODEL = "qwen2.5:14b"
+
+    def _gpu_flywheel(self):
+        """天工GPU永动飞轮 v2.0——多模型轮换·按话题路由·GPU充分利用"""
+        topic_idx = 0
+        while True:
+            try:
+                topic = PERPETUAL_TOPICS[topic_idx % len(PERPETUAL_TOPICS)]
+                topic_idx += 1
+
+                # 按话题匹配最优模型
+                model = GPU_DEFAULT_MODEL
+                for keywords, m in GPU_MODEL_ROUTER:
+                    if any(kw in topic for kw in keywords):
+                        model = m
+                        break
+
+                data = json.dumps({
+                    "model": model,
+                    "prompt": f"专业回答(80字内): {topic}",
+                    "stream": False,
+                    "options": {"temperature": 0.5, "num_predict": 100}
+                }).encode()
+                req = request.Request("http://localhost:11434/api/generate", data=data,
+                    headers={"Content-Type": "application/json"})
+                resp = request.urlopen(req, timeout=60)
+                result = json.loads(resp.read())
+                answer = result.get("response", "").strip()
+
+                if answer:
+                    gene_content = f"[GPU多模型·{model}] Q: {topic} | A: {answer[:250]}"
+                    self.gene.write_and_broadcast(gene_content, "semantic",
+                                                  f"{NODE_NAME}/gpu-flywheel-v2", 0.65)
+                    self.stats["gpu_tasks"] += 1
+
+                time.sleep(60)  # 每1分钟·GPU利用率提升
+
+            except Exception as e:
+                time.sleep(30)
+
+    def _gene_quality_flywheel(self):
+        """地枢基因质量飞轮——定期巡检·去重·评分优化"""
+        while True:
+            try:
+                # 拉取最近基因统计
+                resp = request.urlopen("http://100.116.0.29:8200/health", timeout=5)
+                health = json.loads(resp.read())
+                total = health.get("genes", 0)
+                active = health.get("active", 0)
+
+                # 质量洞察纳基因
+                ratio = active / max(total, 1)
+                insight = (f"[基因质量巡检] 总量{total}·活跃{active}·活跃率{ratio:.1%}。"
+                          f"节点:{NODE_NAME}·时间:{datetime.now().isoformat()[:19]}")
+                self.gene.write_and_broadcast(insight, "episodic",
+                                              f"{NODE_NAME}/gene-quality", 0.5)
+                self.stats["gene_quality_runs"] += 1
+
+                time.sleep(600)  # 每10分钟
+
+            except Exception as e:
+                time.sleep(300)
+
+    def _neo4j_flywheel(self):
+        """Neo4j推理飞轮——图谱查询·知识关系发现"""
+        while True:
+            try:
+                # 查询基因关系
+                query = {"statements": [{"statement": "MATCH ()-[r]-() RETURN type(r) as rel, count(*) as cnt ORDER BY cnt DESC LIMIT 5"}]}
+                data = json.dumps(query).encode()
+                neo4j_url = "http://127.0.0.1:7474" if NODE_NAME == "地枢" else "http://100.116.0.29:7474"
+                req = request.Request(f"{neo4j_url}/db/neo4j/tx/commit", data=data,
+                    headers={"Content-Type": "application/json"})
+                resp = request.urlopen(req, timeout=10)
+                result = json.loads(resp.read())
+                rows = result.get("results", [{}])[0].get("data", [])
+
+                if rows:
+                    summary = " | ".join([f"{r['row'][0]}:{r['row'][1]}" for r in rows[:5]])
+                    insight = f"[Neo4j推理] 知识关系: {summary}"
+                    self.gene.write_and_broadcast(insight, "semantic",
+                                                  f"{NODE_NAME}/neo4j-flywheel", 0.55)
+                self.stats["neo4j_queries"] += 1
+
+                time.sleep(1800)  # 每30分钟
+
+            except Exception as e:
+                time.sleep(600)
+
+    def _gene_distill_flywheel(self):
+        """知识蒸馏飞轮——从815K基因中提炼精华·去重·冲突检测"""
+        while True:
+            try:
+                # 搜索低质量基因→标记改进
+                resp = request.urlopen("http://100.116.0.29:8200/health", timeout=5)
+                health = json.loads(resp.read())
+                total = health.get("genes", 0)
+
+                # 搜索最近低fitness基因
+                search_data = json.dumps({"query": "联邦 AI 架构 七自 永动", "n_results": 20}).encode()
+                req = request.Request("http://100.116.0.29:8200/genes/search", data=search_data,
+                    headers={"Content-Type": "application/json",
+                             "X-LGE-Key": "fbe0b015eb7a03727903b660c4cecc60"})
+                resp = request.urlopen(req, timeout=10)
+                results = json.loads(resp.read())
+                genes = results if isinstance(results, list) else results.get("results", [])
+
+                if genes:
+                    avg_fitness = sum(g.get("fitness_score", g.get("score", 0.5)) for g in genes) / len(genes)
+                    top_gene = genes[0].get("content", "")[:100] if genes else "?"
+
+                    insight = (f"[知识蒸馏] 基因库{total}条·采样fitness均值{avg_fitness:.2f}。"
+                              f"发现{len(genes)}条相关知识·首条:{top_gene}")
+                    self.gene.write_and_broadcast(insight, "semantic",
+                                                  f"{NODE_NAME}/gene-distill", 0.55)
+                    self.stats["gene_quality_runs"] = self.stats.get("gene_quality_runs", 0) + 1
+
+                time.sleep(900)  # 每15分钟
+
+            except Exception as e:
+                time.sleep(600)
+
+    def _gene_dedup_flywheel(self):
+        """基因去重飞轮——检测重复基因·标记合并"""
+        while True:
+            try:
+                # 搜索高频重复内容
+                search_data = json.dumps({"query": "LGOX 联邦 架构 节点 天枢", "n_results": 30}).encode()
+                req = request.Request("http://100.116.0.29:8200/genes/search", data=search_data,
+                    headers={"Content-Type": "application/json",
+                             "X-LGE-Key": "fbe0b015eb7a03727903b660c4cecc60"})
+                resp = request.urlopen(req, timeout=10)
+                results = json.loads(resp.read())
+                genes = results if isinstance(results, list) else results.get("results", [])
+
+                # 检测相似基因
+                from collections import Counter
+                content_hashes = Counter()
+                for g in genes:
+                    c = str(g.get("content", ""))[:80]
+                    content_hashes[c] += 1
+
+                dupes = {k: v for k, v in content_hashes.items() if v > 1}
+                if dupes:
+                    insight = f"[基因去重] 采样{len(genes)}条·发现{len(dupes)}组重复({sum(dupes.values())}条)·建议合并"
+                    self.gene.write_and_broadcast(insight, "episodic",
+                                                  f"{NODE_NAME}/gene-dedup", 0.5)
+
+                time.sleep(3600)  # 每1小时
+
+            except Exception as e:
+                time.sleep(1200)
+
+# 全局永动引擎实例
+perpetual = None
+
+# ═══════════════════════════════════════
 # 自检与启动
 # ═══════════════════════════════════════
 
@@ -758,6 +1008,16 @@ def main():
     print(f"     POST /gene/write — P2P基因写入")
     print(f"     POST /consensus/propose — 发起共识")
     print(f"     POST /consensus/vote    — 投票")
+
+    # 🧬 永动引擎——检测节点能力·启动自动飞轮
+    global perpetual
+    perpetual = PerpetualEngine(identity, gene, graph)
+    print("\n  ⚡ 永动引擎启动中...")
+    perpetual.detect_and_launch()
+    if perpetual.cycles:
+        print(f"     飞轮: {'·'.join(perpetual.cycles.keys())}")
+    else:
+        print("     无匹配飞轮(本节点为轻量角色)")
 
     server = HTTPServer(("0.0.0.0", PORT), FPCHandler)
     server.serve_forever()

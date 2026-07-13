@@ -50,6 +50,7 @@ SEVEN_SELF = {
 # FPC守护者 — 七自·自愈合的物理实现
 # ══════════════════════════════
 FPC_NODES = {
+    "天枢": {"host": "100.100.89.2", "ssh": None, "port": 8791, "script": "~/lgox-ops/scripts/federation_perpetual_core.py"},
     "天工": {"host": "spark-abbd", "ssh": "dgx1", "port": 8790, "script": "~/lgox-ops/scripts/federation_perpetual_core.py"},
     "地枢": {"host": "spark-5438", "ssh": "dgx2", "port": 8790, "script": "~/lgox-ops/scripts/federation_perpetual_core.py"},
 }

@@ -396,4 +396,9 @@ if __name__ == "__main__":
                 print(f"上次: {report['last_cycle']['genes']}基因·{report['last_cycle']['timestamp']}")
 
     else:
-        ap.print_help()
+        # cron no-agent mode: default to --absorb with json output
+        result = absorb_light()
+        if result["genes"] == 0:
+            print("[KPS] External absorption empty, using builtin...")
+            result["genes"] = run_builtin_photosynthesis()
+        print(json.dumps(result, indent=2, ensure_ascii=False))

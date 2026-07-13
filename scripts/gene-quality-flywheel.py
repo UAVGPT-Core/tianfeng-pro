@@ -8,7 +8,9 @@ cron: 每小时运行
 import urllib.request, json, time, sys, os
 from datetime import datetime, timedelta
 
-LGE_BASE = "http://100.116.0.29:8200"
+LGE_PRIMARY = "http://100.116.0.29:8200"
+LGE_FALLBACK = "http://127.0.0.1:8210"
+LGE_BASE = LGE_PRIMARY
 LOG = os.path.expanduser("~/lgox-ops/logs/gene-quality-flywheel.log")
 
 def log(msg):
@@ -19,29 +21,38 @@ def log(msg):
         f.write(line + "\n")
 
 def lge_get(path, timeout=10):
-    try:
-        req = urllib.request.Request(f"{LGE_BASE}{path}")
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return json.loads(r.read())
-    except Exception as e:
-        log(f"LGE GET {path} 失败: {e}")
-        return None
+    for base in [LGE_PRIMARY, LGE_FALLBACK]:
+        try:
+            req = urllib.request.Request(f"{base}{path}")
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                result = json.loads(r.read())
+                if result:  # non-empty response
+                    return result
+        except Exception:
+            continue
+    log(f"LGE GET {path} 失败 (主+备均不可达)")
+    return None
 
 def lge_post(path, data, timeout=10):
-    try:
-        payload = json.dumps(data).encode()
-        req = urllib.request.Request(f"{LGE_BASE}{path}",
-            data=payload, headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return json.loads(r.read())
-    except Exception as e:
-        log(f"LGE POST {path} 失败: {e}")
-        return None
+    for base in [LGE_PRIMARY, LGE_FALLBACK]:
+        try:
+            payload = json.dumps(data).encode()
+            req = urllib.request.Request(f"{base}{path}",
+                data=payload, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                result = json.loads(r.read())
+                if result:
+                    return result
+        except Exception:
+            continue
+    log(f"LGE POST {path} 失败 (主+备均不可达)")
+    return None
 
 def run():
-    log("═══ 基因质量飞轮 v1.0 启动 ═══")
+    log("═══ 基因质量飞轮 v1.1 启动 ═══")
 
-    # 1. 拉取基因统计
+    # 0. 检测数据源
+    source = "主(地枢)"
     stats = lge_get("/genes/stats")
     if not stats:
         log("❌ 无法获取基因统计·退出")
