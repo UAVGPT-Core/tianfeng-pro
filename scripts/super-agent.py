@@ -4,7 +4,7 @@ LGOX联邦 超级智能体 v2.0 — 真AI生命
 部署: 灵龙 :8780 | launchd保活
 新增: 持久记忆 · 跨Agent对话 · 自进化引擎 · 多路灾备
 """
-import json, os, time, urllib.request, threading, sys
+import json, os, time, asyncio, urllib.request, threading, sys
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 import uvicorn
@@ -211,7 +211,7 @@ async def openai_chat(request: Request):
     channel_name = "天巡" if route == "tx" else "小枢"
     target_url = TX_URL if route == "tx" else XS_URL
     
-    evidence = fetch_evidence(user_msg)
+    evidence = await asyncio.to_thread(fetch_evidence, user_msg)
     evidence_text = "\n".join(
         f"[{e['gene_id']}] {e['content'][:80]}" for e in evidence[:3]
     ) if evidence else ""
@@ -220,8 +220,7 @@ async def openai_chat(request: Request):
         forward = json.dumps({"question": user_msg, "evidence": evidence_text}).encode()
         req = urllib.request.Request(target_url, data=forward,
             headers={"Content-Type":"application/json"})
-        with urllib.request.urlopen(req, timeout=30) as r:
-            result = json.loads(r.read())
+        result = await asyncio.to_thread(lambda: json.loads(urllib.request.urlopen(req, timeout=30).read()))
         answer = result.get("answer","")
         latency = int((time.time()-t0)*1000)
         
@@ -258,14 +257,16 @@ async def openai_chat(request: Request):
 
 @app.get("/health")
 async def health():
-    hc = health_check()
+    hc = await asyncio.to_thread(health_check)
     all_green = all(hc.values())
+    mem_xs = await asyncio.to_thread(mem.get_recent_sessions, "小枢", 100)
+    mem_tx = await asyncio.to_thread(mem.get_recent_sessions, "天巡", 100)
     return {
         "status": "ok" if all_green else "degraded",
         "service": "LGOX超级智能体v2.0·真AI生命",
         "health": hc,
         "multi_path": "多通多绿多冗余" if all_green else f"{sum(hc.values())}/4绿",
-        "memory_sessions": len(mem.get_recent_sessions("小枢",100)) + len(mem.get_recent_sessions("天巡",100)),
+        "memory_sessions": len(mem_xs) + len(mem_tx),
         "version": "v2.0-20260708"
     }
 
@@ -289,16 +290,16 @@ async def chat(request: Request):
     agent_name = channel_name
 
     # ① 持久记忆注入
-    mem_ctx = memory_context(agent_name, session_id, question)
+    mem_ctx = await asyncio.to_thread(memory_context, agent_name, session_id, question)
     
     # ② 证据链
-    evidence = fetch_evidence(question)
+    evidence = await asyncio.to_thread(fetch_evidence, question)
     evidence_text = "\n".join(
         f"[{e['gene_id']} f={e['fitness']:.2f}] {e['content']}" for e in evidence[:3]
     ) if evidence else ""
     
     # ③ 跨Agent对话 (深度问题自动触发)
-    cross_ctx = cross_agent_context(question) if len(question) > 10 else ""
+    cross_ctx = await asyncio.to_thread(cross_agent_context, question) if len(question) > 10 else ""
     
     # ④ 构建增强query
     enhanced_q = question
@@ -318,20 +319,19 @@ async def chat(request: Request):
         forward = json.dumps({"question": enhanced_q, "evidence": evidence_text}).encode()
         req = urllib.request.Request(target_url, data=forward,
             headers={"Content-Type":"application/json"})
-        with urllib.request.urlopen(req, timeout=30) as r:
-            result = json.loads(r.read())
+        result = await asyncio.to_thread(lambda: json.loads(urllib.request.urlopen(req, timeout=30).read()))
         answer = result.get("answer", "")
         latency = int((time.time() - t0) * 1000)
         
         # ⑥ 保存记忆
         if session_id:
-            memory_save(agent_name, session_id, question, answer, evidence_text)
+            await asyncio.to_thread(memory_save, agent_name, session_id, question, answer, evidence_text)
         
         # ⑦ 自进化
-        evolve_stats = self_evolve_check()
+        evolve_stats = await asyncio.to_thread(self_evolve_check)
         
         # ⑧ 联邦桥通知
-        bridge_notify(channel_name, question, answer)
+        await asyncio.to_thread(bridge_notify, channel_name, question, answer)
         
         return JSONResponse({
             "channel": channel_name,
@@ -354,8 +354,7 @@ async def chat(request: Request):
         try:
             req2 = urllib.request.Request(fallback, data=forward,
                 headers={"Content-Type":"application/json"})
-            with urllib.request.urlopen(req2, timeout=20) as r2:
-                result2 = json.loads(r2.read())
+            result2 = await asyncio.to_thread(lambda: json.loads(urllib.request.urlopen(req2, timeout=20).read()))
             return JSONResponse({
                 "channel": fallback_name, "route": "fallback",
                 "answer": result2.get("answer",""),
@@ -367,10 +366,10 @@ async def chat(request: Request):
 
 @app.get("/seven-self")
 async def seven_self():
-    hc = health_check()
-    evolve = self_evolve_check()
-    learnings_xs = mem.get_learnings("小枢", 5)
-    learnings_tx = mem.get_learnings("天巡", 5)
+    hc = await asyncio.to_thread(health_check)
+    evolve = await asyncio.to_thread(self_evolve_check)
+    learnings_xs = await asyncio.to_thread(mem.get_learnings, "小枢", 5)
+    learnings_tx = await asyncio.to_thread(mem.get_learnings, "天巡", 5)
     return {
         "自感知": hc,
         "多通多绿": f"{sum(hc.values())}/4路通",
@@ -384,13 +383,19 @@ async def seven_self():
 
 @app.get("/memory")
 async def memory_status():
+    xs_sessions = await asyncio.to_thread(mem.get_recent_sessions, "小枢", 100)
+    tx_sessions = await asyncio.to_thread(mem.get_recent_sessions, "天巡", 100)
+    xs_learnings = await asyncio.to_thread(mem.get_learnings, "小枢", 100)
+    tx_learnings = await asyncio.to_thread(mem.get_learnings, "天巡", 100)
+    recent_xs = await asyncio.to_thread(mem.get_learnings, "小枢", 3)
+    recent_tx = await asyncio.to_thread(mem.get_learnings, "天巡", 3)
     return {
-        "小枢_sessions": len(mem.get_recent_sessions("小枢", 100)),
-        "天巡_sessions": len(mem.get_recent_sessions("天巡", 100)),
-        "小枢_learnings": len(mem.get_learnings("小枢", 100)),
-        "天巡_learnings": len(mem.get_learnings("天巡", 100)),
-        "recent_xs": [{"topic":l["topic"],"ts":l["ts"]} for l in mem.get_learnings("小枢",3)],
-        "recent_tx": [{"topic":l["topic"],"ts":l["ts"]} for l in mem.get_learnings("天巡",3)],
+        "小枢_sessions": len(xs_sessions),
+        "天巡_sessions": len(tx_sessions),
+        "小枢_learnings": len(xs_learnings),
+        "天巡_learnings": len(tx_learnings),
+        "recent_xs": [{"topic":l["topic"],"ts":l["ts"]} for l in recent_xs],
+        "recent_tx": [{"topic":l["topic"],"ts":l["ts"]} for l in recent_tx],
     }
 
 
