@@ -70,39 +70,47 @@ def check_fpc_health(node_name, cfg):
         return False
 
 def heal_fpc(node_name, cfg):
-    """SSH远程拉起FPC——跨节点自愈"""
+    """警报+通知——跨节点自愈通知（重启靠各节点自身systemd/launchd）"""
     global fpc_heal_count
-    ssh_alias = cfg["ssh"]
-    script = cfg["script"]
+    fpc_heal_count += 1
 
-    # 先杀旧进程再拉起
-    cmd = (f"ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no {ssh_alias} "
-           f"\"kill \\$(pgrep -f federation_perpetual) 2>/dev/null; sleep 1; "
-           f"nohup python3 {script} > ~/lgox-ops/logs/fpc.log 2>&1 & disown\"")
+    # 通过联邦桥发送ALERT——天枢consumer收到后可通知节点管理员
+    alert = {
+        "to": "all",
+        "from": NODE_NAME,
+        "type": "FPC_ALERT",
+        "priority": "P1",
+        "msg_id": f"fpc-heal-{time.strftime('%m%d%H%M')}-{uuid.uuid4().hex[:6]}",
+        "ttl": 86400,
+        "content": f"联邦自愈警报: {node_name}FPC离线(连续{fpc_failures.get(node_name,0)}次)。"
+                   f"请{node_name}节点systemd/launchd自动重启FPC服务。第{fpc_heal_count}次跨节点检测。",
+        "meta": {"node": node_name, "heal_count": fpc_heal_count}
+    }
     try:
-        result = os.popen(cmd).read()
-        fpc_heal_count += 1
+        data = json.dumps(alert, ensure_ascii=False).encode()
+        req = request.Request(f"{TIANSHU_BRIDGE}/messages/send", data=data,
+            headers={"Content-Type": "application/json"})
+        request.urlopen(req, timeout=5)
+        log(f"📢 已发送{node_name}FPC离线警报到联邦桥")
+    except:
+        pass
 
-        # 纳基因——每次自愈都是联邦的记忆
-        gene = {
-            "content": f"[联邦自愈] 灵龙Worker检测到{node_name}FPC离线→SSH远程拉起。 "
-                       f"cmd: {cmd[:100]}... 第{fpc_heal_count}次跨节点自愈。",
-            "memory_type": "episodic",
-            "source": "灵龙/FPC守护者/自愈合",
-            "fitness_score": 0.9
-        }
-        try:
-            data = json.dumps(gene).encode()
-            req = request.Request(LGE_DIRECT, data=data,
-                headers={"Content-Type": "application/json", "X-LGE-Key": LGE_KEY})
-            request.urlopen(req, timeout=8)
-        except:
-            pass
+    # 纳基因
+    gene = {
+        "content": f"[联邦自愈检测] Worker发现{node_name}FPC离线→已向联邦桥发送ALERT。第{fpc_heal_count}次检测。",
+        "memory_type": "episodic",
+        "source": "灵龙/FPC守护者/自愈合",
+        "fitness_score": 0.85
+    }
+    try:
+        data = json.dumps(gene).encode()
+        req = request.Request(LGE_DIRECT, data=data,
+            headers={"Content-Type": "application/json", "X-LGE-Key": LGE_KEY})
+        request.urlopen(req, timeout=8)
+    except:
+        pass
 
-        return True
-    except Exception as e:
-        log(f"FPC拉起{node_name}失败: {str(e)[:60]}", "WARN")
-        return False
+    return True
 
 def fpc_guardian_cycle():
     """FPC守护循环——检测→累计→拉起→纳基因"""
