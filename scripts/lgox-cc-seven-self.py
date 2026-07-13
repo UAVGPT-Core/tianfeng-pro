@@ -37,9 +37,11 @@ def seven_self():
     
     try:
         r = subprocess.run(["which", "lgox-cc"], capture_output=True)
-        cc_ok = r.returncode == 0
+        cc_which = r.returncode == 0
     except:
-        cc_ok = False
+        cc_which = False
+    cc_script = os.path.exists(os.path.expanduser("~/lgox-ops/scripts/lgox-cc-v7.py"))
+    cc_ok = cc_which or cc_script
     
     results["自感知"] = f"bridge={bridge_ok} codex={codex_ok} lgox-cc={cc_ok}"
     log(f"自感知: {results['自感知']}")
@@ -72,16 +74,41 @@ def seven_self():
     log(f"自愈合: {results['自愈合']}")
     
     # 4. 自进化: 拉取最新基因学习
+    evidence = []
+    evolution_source = "remote"
+    # 一级: 远程统一查询 (SSH隧道到天枢 unified-query-api)
     try:
         payload = json.dumps({"query": "七自飞轮 AI灯塔", "timeout": 5}).encode()
         req = urllib.request.Request("http://127.0.0.1:18769/query", data=payload,
             headers={"Content-Type": "application/json"})
         r = urllib.request.urlopen(req, timeout=8)
         d = json.loads(r.read())
-        evidence = d.get("evidence", [])
-        results["自进化"] = f"genes_{len(evidence)}"
+        evidence = d.get("evidence", []) or d.get("results", []) or d.get("genes", [])
     except:
-        results["自进化"] = "fail"
+        evolution_source = "lga_fallback"
+        # 二级: LGA本地基因代理
+        try:
+            payload = json.dumps({"query": "七自飞轮", "n_results": 5}).encode()
+            req = urllib.request.Request("http://127.0.0.1:8202/genes/search", data=payload,
+                headers={"Content-Type": "application/json"})
+            r = urllib.request.urlopen(req, timeout=5)
+            d = json.loads(r.read())
+            evidence = d.get("results", []) or d.get("genes", [])
+        except:
+            evolution_source = "local_fallback"
+            # 三级: 本地SQLite查询
+            try:
+                import sqlite3
+                db = os.path.expanduser("~/lgox-ops/lge.db")
+                if os.path.exists(db):
+                    conn = sqlite3.connect(db)
+                    cur = conn.cursor()
+                    cur.execute("SELECT content FROM genes WHERE content LIKE ? LIMIT 5", ("%七自%",))
+                    evidence = [row[0][:200] for row in cur.fetchall()]
+                    conn.close()
+            except:
+                evidence = []
+    results["自进化"] = f"{evolution_source}_evidence_{len(evidence)}"
     log(f"自进化: {results['自进化']}")
     
     # 5. 自迭代: 版本检查
