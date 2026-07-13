@@ -1,0 +1,12 @@
+{
+  "gene_id": "GENE-ALERT-1783974898",
+  "domain": "meta",
+  "content": "地枢离线11.7h·LGE写不可达·联邦连通巡检告警",
+  "tags": [
+    "alert",
+    "node_offline",
+    "地枢"
+  ],
+  "source": "灵龙/联邦连通巡检",
+  "ts": "2026-07-14T04:34:58.120234"
+}
