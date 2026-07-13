@@ -1,0 +1,22 @@
+{
+  "type": "perception",
+  "source": "灵龙/联邦巡检",
+  "ts": "2026-07-14 06:28",
+  "content": {
+    "nodes": {
+      "天枢": "alive(SSH+4/4) 桥状态offline假阳性",
+      "地枢": "DEAD 0/3 SSH+LGE全断 ~8h",
+      "天工": "alive 3/3 Ollama可用",
+      "灵龙": "alive 巡检中",
+      "织网": "partial 1/3 隧道通桥断",
+      "太一": "alive SSH通(刚醒)",
+      "天玑": "mostly_ok 3/4",
+      "天怿": "offline ~24h(预期间歇)"
+    },
+    "bridge_health": {
+      "灵龙桥_v3.0": "active 12节点",
+      "天枢桥_v4.0": "可达(SSH中继)"
+    },
+    "alert": "地枢全断8h需人工检查"
+  }
+}
