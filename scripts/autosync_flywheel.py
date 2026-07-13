@@ -34,21 +34,26 @@ def auto_sync():
             env["GIT_SSH_COMMAND"] = f"ssh -i {K} -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ServerAliveInterval=30"
             ok, out, err = run(["git", "push", remote["url"], "main"], timeout=120, env=env)
             if not ok:
-                # Remote may be ahead — stash local changes, pull/rebase, pop stash, retry
+                # Remote diverged — fetch, merge (NOT rebase) to avoid divergent history
                 run(["git", "fetch", remote["url"], "main"], timeout=30, env=env)
-                run(["git", "stash"], timeout=10)
-                ok_rebase, _, rebase_err = run(["git", "rebase", f"{remote['url']}/main"], timeout=30, env=env)
-                if not ok_rebase:
-                    run(["git", "rebase", "--abort"], timeout=10)
-                run(["git", "stash", "pop"], timeout=10)
-                # Stage any popped changes
-                run(["git", "add", "-A"])
-                run(["git", "commit", "-m", f"auto: sync {time.strftime('%m%d-%H%M')} stash-merge", "--allow-empty"], timeout=10)
+                # Merge remote into local (accept remote's version on conflicts)
+                ok_merge, _, merge_err = run(
+                    ["git", "merge", f"FETCH_HEAD", "--no-edit", "-m",
+                     f"auto: merge {remote['name']} {time.strftime('%m%d-%H%M')}"],
+                    timeout=30, env=env
+                )
+                if not ok_merge:
+                    # Abort merge if it failed
+                    run(["git", "merge", "--abort"], timeout=10)
+                    run(["git", "reset", "--hard", "HEAD~1"], timeout=10)
+                    results.append(f"{remote['name']}: ❌ merge-conflict-needs-manual")
+                    continue
+                # Retry push after merge
                 ok, out, err = run(["git", "push", remote["url"], "main"], timeout=120, env=env)
             results.append(f"{remote['name']}: {'✅' if ok else '❌ '+err[:60]}")
         except Exception as e:
             results.append(f"{remote['name']}: {str(e)[:60]}")
-    
+
     return " | ".join(results)
 
 if __name__ == "__main__":

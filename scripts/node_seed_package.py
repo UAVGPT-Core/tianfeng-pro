@@ -29,7 +29,8 @@ from urllib import request, parse
 # 配置
 # ══════════════════════════════
 LGE_URL = "http://100.116.0.29:8200"
-BRIDGE_URL = "http://100.100.89.2:8765"
+BRIDGE_URL = "http://127.0.0.1:8765"   # 本地优先（灵龙自身bridge）
+FALLBACK_BRIDGE = "http://100.100.89.2:8765"  # 天枢bridge（降级）
 LGA_URL = "http://127.0.0.1:8202"
 LGE_KEY = "fbe0b015eb7a03727903b660c4cecc60"
 DATA_DIR = Path.home() / "lgox-ops/data/seeds"
@@ -64,19 +65,32 @@ CORE_GENE_IDS = [
     "GENE-SEM-709bfa0fc3e63955",      # 开源进化策略
 ]
 
-def fetch_genes(query, n=5):
-    """从LGE搜索基因"""
-    try:
-        data = json.dumps({"query": query, "n_results": n}).encode()
-        req = request.Request(f"{LGE_URL}/genes/search", data=data,
-            headers={"Content-Type": "application/json"})
-        resp = request.urlopen(req, timeout=8)
-        result = json.loads(resp.read())
-        if isinstance(result, list):
-            return result
-        return result.get("results", result.get("genes", []))
-    except:
-        return []
+def fetch_genes(query, n=5, timeout=2):
+    """从LGE搜索基因，超时快速降级"""
+    for lge_url in [LGA_URL, LGE_URL]:
+        try:
+            data = json.dumps({"query": query, "n_results": n}).encode()
+            req = request.Request(f"{lge_url}/genes/search", data=data,
+                headers={"Content-Type": "application/json"})
+            resp = request.urlopen(req, timeout=timeout)
+            result = json.loads(resp.read())
+            if isinstance(result, list):
+                return result
+            return result.get("results", result.get("genes", []))
+        except:
+            continue
+    return []
+
+def is_lge_reachable():
+    """快速检测LGE/LGA是否可达(HTTP级别)"""
+    for lge_url in [LGA_URL, LGE_URL]:
+        try:
+            req = request.Request(f"{lge_url}/health")
+            resp = request.urlopen(req, timeout=2)
+            return True
+        except:
+            continue
+    return False
 
 def build_seed_package():
     """构建最新种子包"""
@@ -94,10 +108,19 @@ def build_seed_package():
         }
     }
 
+    lge_available = is_lge_reachable()
+    if lge_available:
+        print("✅ LGE可达，搜索基因...")
+    else:
+        print("⚠️ LGE/LGA均不可达，使用预置基因fallback")
+    
     for topic_name, query in SEED_TOPICS:
-        genes = fetch_genes(query)
-        gene_ids = [g.get("gene_id", "?") for g in genes[:3]] if genes else []
-        # Fallback: 如果LGE搜索为空，使用预置核心基因
+        if lge_available:
+            genes = fetch_genes(query)
+            gene_ids = [g.get("gene_id", "?") for g in genes[:3]] if genes else []
+        else:
+            genes = []
+            gene_ids = []
         if not gene_ids:
             gene_ids = CORE_GENE_IDS[:3]
         package["topics"][topic_name] = {
@@ -108,23 +131,28 @@ def build_seed_package():
         }
         package["total_genes"] += len(gene_ids)
 
-    # 注入能力图谱
-    try:
-        req = request.Request(f"{BRIDGE_URL}/federation/nodes")
-        resp = request.urlopen(req, timeout=5)
-        nodes = json.loads(resp.read())
-        if isinstance(nodes, dict):
-            nodes = nodes.get("nodes", nodes)
-        package["capability_graph"] = {
-            "node_count": len(nodes) if isinstance(nodes, (list, dict)) else 0,
-            "snapshot": str(nodes)[:3000]
-        }
-    except:
+    # 注入能力图谱 — 本地桥优先，天枢降级
+    for bridge_url in [BRIDGE_URL, FALLBACK_BRIDGE]:
+        try:
+            req = request.Request(f"{bridge_url}/federation/nodes")
+            resp = request.urlopen(req, timeout=3)
+            nodes = json.loads(resp.read())
+            if isinstance(nodes, dict):
+                nodes = nodes.get("nodes", nodes)
+            package["capability_graph"] = {
+                "node_count": len(nodes) if isinstance(nodes, (list, dict)) else 0,
+                "snapshot": str(nodes)[:3000],
+                "bridge_source": bridge_url
+            }
+            break
+        except:
+            continue
+    else:
         package["capability_graph"] = {"error": "bridge unreachable"}
 
     return package
 
-def inject_to_node(node_name, package):
+def inject_to_node(node_name, package, lge_available=True):
     """向指定节点注入种子包"""
     results = []
 
@@ -143,28 +171,31 @@ def inject_to_node(node_name, package):
         data = json.dumps(seed_msg, ensure_ascii=False).encode()
         req = request.Request(f"{BRIDGE_URL}/messages/send", data=data,
             headers={"Content-Type": "application/json"})
-        resp = request.urlopen(req, timeout=5)
+        resp = request.urlopen(req, timeout=3)
         results.append({"method": "bridge", "status": "sent"})
     except Exception as e:
         results.append({"method": "bridge", "status": "failed", "error": str(e)[:80]})
 
-    # 方式2: 写入LGE为node-seed基因(被动注入·等节点cron拉取)
-    seed_gene = {
-        "content": f"[联邦种子包v{package['version']}] 新节点{node_name}入网·核心知识{package['total_genes']}条",
-        "memory_type": "procedural",
-        "source": f"seed-injector/{node_name}",
-        "tags": ["seed", "onboarding", f"to:{node_name}", "domain:topology"],
-        "fitness_score": 0.95
-    }
-    try:
-        data = json.dumps(seed_gene).encode()
-        req = request.Request(f"{LGE_URL}/genes/write", data=data,
-            headers={"Content-Type": "application/json", "X-LGE-Key": LGE_KEY})
-        resp = request.urlopen(req, timeout=8)
-        gid = json.loads(resp.read()).get("gene_id", "?")
-        results.append({"method": "lge-gene", "gene_id": gid})
-    except Exception as e:
-        results.append({"method": "lge-gene", "status": "failed", "error": str(e)[:80]})
+    # 方式2: 写入LGE为node-seed基因(仅LGE可用时)
+    if lge_available:
+        seed_gene = {
+            "content": f"[联邦种子包v{package['version']}] 新节点{node_name}入网·核心知识{package['total_genes']}条",
+            "memory_type": "procedural",
+            "source": f"seed-injector/{node_name}",
+            "tags": ["seed", "onboarding", f"to:{node_name}", "domain:topology"],
+            "fitness_score": 0.95
+        }
+        try:
+            data = json.dumps(seed_gene).encode()
+            req = request.Request(f"{LGE_URL}/genes/write", data=data,
+                headers={"Content-Type": "application/json", "X-LGE-Key": LGE_KEY})
+            resp = request.urlopen(req, timeout=3)
+            gid = json.loads(resp.read()).get("gene_id", "?")
+            results.append({"method": "lge-gene", "gene_id": gid})
+        except Exception as e:
+            results.append({"method": "lge-gene", "status": "failed", "error": str(e)[:80]})
+    else:
+        results.append({"method": "lge-gene", "status": "skipped", "reason": "LGE unavailable"})
 
     return results
 
@@ -178,16 +209,23 @@ def auto_onboard(force=False):
     except:
         state = {"injected": {}, "last_scan": None}
 
-    # 扫描联邦桥节点列表
-    try:
-        req = request.Request(f"{BRIDGE_URL}/federation/nodes")
-        resp = request.urlopen(req, timeout=5)
-        data = json.loads(resp.read())
-        nodes = data.get("nodes", data)
-        if isinstance(nodes, dict):
-            nodes = nodes
-    except:
-        print("❌ 联邦桥不可达")
+    # 扫描联邦桥节点列表 — 本地优先
+    nodes = None
+    for bridge_url in [BRIDGE_URL, FALLBACK_BRIDGE]:
+        try:
+            req = request.Request(f"{bridge_url}/federation/nodes")
+            resp = request.urlopen(req, timeout=5)
+            data = json.loads(resp.read())
+            nodes = data.get("nodes", data)
+            if isinstance(nodes, dict):
+                nodes = nodes
+            break
+        except Exception as e:
+            print(f"⚠️ {bridge_url} 不可达: {e}")
+            continue
+    
+    if nodes is None:
+        print("❌ 联邦桥不可达（本地及天枢均失败）")
         return
 
     # 发现未注入节点
@@ -204,10 +242,12 @@ def auto_onboard(force=False):
     package = build_seed_package()
     json.dump(package, SEED_CACHE.open("w"), ensure_ascii=False)
 
+    lge_available = is_lge_reachable()
+
     # 逐个注入
     for node in new_nodes:
         print(f"🚀 注入 {node}...")
-        results = inject_to_node(node, package)
+        results = inject_to_node(node, package, lge_available=lge_available)
         success = any("sent" in str(r.get("status","")) or "gene_id" in r for r in results)
         state["injected"][node] = {
             "time": datetime.utcnow().isoformat(),

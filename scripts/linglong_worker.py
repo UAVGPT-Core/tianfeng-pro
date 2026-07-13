@@ -260,10 +260,63 @@ def extract_conversation_genes():
     except:
         pass
 
-    if extracted > 0:
-        log(f"📝 对话提取: {extracted}条基因→质量评审")
+    # 4. 代码踩坑注入评测题库
+    pitfalls_injected = _inject_code_pitfalls()
+
+    if extracted > 0 or pitfalls_injected > 0:
+        log(f"📝 对话提取: {extracted}条基因·{pitfalls_injected}踩坑入题库→质量评审")
 
     return extracted
+
+def _inject_code_pitfalls():
+    """从联邦操作中识别代码踩坑→注入FedEval题库"""
+    injected = 0
+    pitfalls = []
+
+    # 检测FPC守护发现的模式问题
+    if fpc_failures.get("天工", 0) >= 2:
+        pitfalls.append({
+            "task": "实现远程进程守护·检测FPC离线→自动重启·使用curl health check而非pgrep",
+            "category": "devops-pitfall",
+            "check": "进程检测用HTTP health·非pgrep·指数退避重试",
+            "source": "fpc-guardian-pitfall"
+        })
+
+    if fpc_failures.get("地枢", 0) >= 2:
+        pitfalls.append({
+            "task": "实现跨环境进程启动·处理nohup在cron中的兼容性·使用脚本包装而非裸命令",
+            "category": "devops-pitfall", 
+            "check": "cron环境变量·shell兼容·nohup正确的后台方式",
+            "source": "fpc-guardian-pitfall"
+        })
+
+    # 桥积压模式
+    try:
+        hreq = request.Request(f"{TIANSHU_BRIDGE}/health",
+            headers={"User-Agent": "linglong-pitfall/2.0"})
+        hresp = request.urlopen(hreq, timeout=5)
+        backlog = json.loads(hresp.read()).get("unread_messages", 0)
+        if backlog > 50:
+            pitfalls.append({
+                "task": "实现消息队列消费的背压处理·积压超过阈值时触发批量消费·防止消息堆积",
+                "category": "distributed-pitfall",
+                "check": "背压检测·批量消费·告警触发·自动降级",
+                "source": "bridge-backlog-pitfall"
+            })
+    except:
+        pass
+
+    for p in pitfalls:
+        try:
+            data = json.dumps(p).encode()
+            req = request.Request("http://127.0.0.1:8795/benchmark/inject", data=data,
+                headers={"Content-Type": "application/json"})
+            request.urlopen(req, timeout=5)
+            injected += 1
+        except:
+            break  # API不可用则跳过
+
+    return injected
 
 def _submit_for_review(content, category):
     """提交基因到天工gemma4质量评审管道"""

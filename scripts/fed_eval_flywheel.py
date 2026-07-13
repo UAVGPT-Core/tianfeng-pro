@@ -18,7 +18,7 @@
 对标: Claude Code(SWE-bench 72%)·Codex(~65%)·天锋PRO
 """
 
-import json, time, os, uuid, hashlib
+import json, time, os, sys, uuid, hashlib, threading
 from pathlib import Path
 from datetime import datetime
 from urllib import request
@@ -182,12 +182,13 @@ def main():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     print("🧪 联邦自评测飞轮 v1.0", flush=True)
-    print(f"   题库: {len(BENCHMARKS)}题·生成:qwen2.5-coder:7b·评审:qwen2.5:14b", flush=True)
+    print(f"   题库: {len(load_benchmarks())}题({len(BENCHMARKS)}静态+{len(load_benchmarks())-len(BENCHMARKS)}注入)·生成:qwen2.5-coder:7b·评审:qwen2.5:14b", flush=True)
     print(f"   对标: Claude Code 72%·Codex 65%·天锋PRO", flush=True)
     print(flush=True)
 
+    benchs = load_benchmarks()
     results = []
-    for bench in BENCHMARKS:
+    for bench in benchs:
         result = run_benchmark(bench)
         if result:
             results.append(result)
@@ -232,5 +233,121 @@ def main():
 
     print(f"\n  基因已写入·结果存档: {RESULTS_FILE}")
 
+# ══════════════════════════════
+# 动态题库——外部注入
+# ══════════════════════════════
+BENCHMARKS_FILE = DATA_DIR / "benchmarks.json"
+
+def load_benchmarks():
+    """加载题库(静态+动态注入)"""
+    benchs = list(BENCHMARKS)
+    if BENCHMARKS_FILE.exists():
+        try:
+            injected = json.load(BENCHMARKS_FILE.open())
+            if isinstance(injected, list):
+                benchs.extend(injected)
+        except:
+            pass
+    return benchs
+
+def inject_benchmark(task_desc, category="injected", difficulty="medium", check="", source=""):
+    """动态注入新评测题——来自天锋PRO产出或踩坑"""
+    injected = []
+    if BENCHMARKS_FILE.exists():
+        try:
+            injected = json.load(BENCHMARKS_FILE.open())
+        except:
+            pass
+
+    bid = f"inj-{uuid.uuid4().hex[:8]}"
+    new_bench = {
+        "id": bid,
+        "category": category,
+        "difficulty": difficulty,
+        "task": task_desc[:500],
+        "check": check[:300] if check else task_desc[:100],
+        "source": source,
+        "injected_at": datetime.now().isoformat()
+    }
+    injected.append(new_bench)
+    json.dump(injected, BENCHMARKS_FILE.open("w"), ensure_ascii=False, indent=2)
+    return bid
+
+# ══════════════════════════════
+# HTTP API — 接收评测题注入
+# ══════════════════════════════
+def start_api_server(port=8795):
+    """启动评测注入API"""
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+
+    class EvalAPIHandler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            if self.path in ("/benchmark/inject", "/inject"):
+                body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                params = json.loads(body)
+                task = params.get("task", params.get("content", ""))
+                source = params.get("source", "api-inject")
+                category = params.get("category", "real-code")
+                check = params.get("check", "")
+                if task:
+                    bid = inject_benchmark(task, category, "medium", check, source)
+                    self._json({"status": "injected", "benchmark_id": bid, "total": len(load_benchmarks())})
+                else:
+                    self._json({"error": "no task content"}, 400)
+            elif self.path == "/eval/run":
+                t = threading.Thread(target=run_full_eval, daemon=True)
+                t.start()
+                self._json({"status": "started"})
+            else:
+                self.send_error(404)
+
+        def do_GET(self):
+            if self.path == "/health":
+                benchs = load_benchmarks()
+                self._json({"status": "ok", "service": "fed-eval-api",
+                           "static_benchmarks": len(BENCHMARKS),
+                           "injected_benchmarks": len(benchs) - len(BENCHMARKS),
+                           "total": len(benchs)})
+            elif self.path == "/benchmarks":
+                self._json(load_benchmarks())
+            else:
+                self.send_error(404)
+
+        def _json(self, data, code=200):
+            self.send_response(code)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(data, ensure_ascii=False).encode())
+
+        def log_message(self, *args): pass
+
+    import threading
+    server = HTTPServer(("0.0.0.0", port), EvalAPIHandler)
+    print(f"  📡 评测注入API :{port}", flush=True)
+    server.serve_forever()
+
+def run_full_eval():
+    """全量评测(线程安全)"""
+    benchs = load_benchmarks()
+    print(f"🧪 评测开始: {len(benchs)}题", flush=True)
+    results = []
+    for bench in benchs:
+        result = run_benchmark(bench)
+        if result:
+            results.append(result)
+            write_gene(result)
+            s = result["scores"]
+            print(f"  {bench['id']}: {s['overall']:.0%}", flush=True)
+        time.sleep(10)
+
+    if results:
+        avg = sum(r["scores"]["overall"] for r in results) / len(results)
+        print(f"均分: {avg:.1%} ({len(results)}题)", flush=True)
+    return results
+
 if __name__ == "__main__":
-    main()
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "api":
+        start_api_server()
+    else:
+        main()
