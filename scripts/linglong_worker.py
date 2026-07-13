@@ -164,6 +164,8 @@ def sse_loop():
     total_processed = 0
     last_sse_attempt = 0
     sse_active = False
+    poll_errors = 0
+    last_health_report = 0
 
     while True:
         # 定时尝试SSE (每5分钟)
@@ -180,8 +182,8 @@ def sse_loop():
                 resp = request.urlopen(req, timeout=5)
                 # 连上了！切到SSE流模式
                 sse_active = True
+                poll_errors = 0
                 log(f"🔗 SSE已激活")
-                consecutive_errors = 0
 
                 event_type = ""
                 event_data = ""
@@ -211,9 +213,6 @@ def sse_loop():
                 sse_active = False
 
             except Exception as e:
-                # SSE不可用→秒切poll(不做无谓重试)
-                if not sse_active:
-                    log(f"SSE不可用→poll模式 ({str(e)[:50]})", "WARN")
                 sse_active = False
 
         # Poll模式 (SSE不可用时的降级)
@@ -235,8 +234,25 @@ def sse_loop():
                     process_message(msg)
                     total_processed += 1
 
+                poll_errors = 0  # 成功→重置
+
+                # 每5分钟心跳+更新STATE
+                if now - last_health_report > 300:
+                    state = {
+                        "total_processed": total_processed,
+                        "last_poll": datetime.now().isoformat(),
+                        "mode": "poll",
+                        "ollama": "ok",
+                        "msgs_in_queue": len(msgs)
+                    }
+                    json.dump(state, STATE_FILE.open("w"), ensure_ascii=False)
+                    log(f"🫀 poll心跳: 处理{total_processed}条·队列{len(msgs)}·错误{poll_errors}")
+                    last_health_report = now
+
             except Exception as e:
-                pass  # poll失败也静默·避免日志洪泛
+                poll_errors += 1
+                if poll_errors <= 1 or poll_errors % 20 == 0:
+                    log(f"⚠ poll失败(#{poll_errors}): {str(e)[:60]}", "WARN")
 
         time.sleep(POLL_INTERVAL if not sse_active else 0.1)
 
