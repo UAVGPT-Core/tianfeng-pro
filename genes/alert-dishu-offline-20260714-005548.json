@@ -1,0 +1,26 @@
+{
+  "ts": "2026-07-14 00:55:48",
+  "type": "alert",
+  "source": "灵龙/连通器巡检",
+  "nodes": {
+    "地枢": {
+      "status": "offline",
+      "offline_minutes": 483,
+      "issue": "LGE:8200不可达·ping 100%丢包·SSH超时"
+    },
+    "天怿": {
+      "status": "offline",
+      "offline_minutes": 1198,
+      "issue": "AI Box预期间歇离线"
+    },
+    "天玑": {
+      "status": "partial",
+      "detail": "3/4 check passed"
+    },
+    "织网": {
+      "status": "partial",
+      "detail": "2/3 check passed, bridge OK"
+    }
+  },
+  "summary": "地枢DGX#2完全不可达8h+ - LGE基因引擎停机"
+}
