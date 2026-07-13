@@ -1,0 +1,11 @@
+{
+  "ts": "2026-07-13 22:56:50",
+  "epoch": 1783983410.4571671,
+  "type": "patrol_alert",
+  "node": "地枢",
+  "status": "offline",
+  "duration_hours": 14.1,
+  "lge_reachable": false,
+  "source": "灵龙/联邦连通器巡检",
+  "summary": "地枢DGX2离线14小时 LGE不可达 其余6节点online 天巡小枢鲁棒"
+}
