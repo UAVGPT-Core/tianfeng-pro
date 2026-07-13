@@ -1,14 +1,17 @@
-# 天锋PRO v5.0 — 世界级AI编程工具 · 9引擎融合
+# 天锋PRO v5.1 — 世界级AI编程工具 · 9引擎融合 · 基因驱动
 
-LGOX联邦旗舰产品 · 第11节点 · 金字塔v7.82全对齐 · 2035商品化
-
-[![Version](https://img.shields.io/badge/version-5.0.0-purple)](https://stock.uavgpt.com/tianfeng)
+[![PyPI](https://img.shields.io/pypi/v/tianfeng-pro-lgox)](https://pypi.org/project/tianfeng-pro-lgox/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://pypi.org/project/tianfeng-pro/)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://pypi.org/project/tianfeng-pro-lgox/)
+[![Stars](https://img.shields.io/github/stars/UAVGPT-Core/tianfeng-pro)](https://github.com/UAVGPT-Core/tianfeng-pro)
+
+LGOX联邦旗舰产品 · 9大引擎永动 · 79万基因库 · 2035架构 · Apache 2.0
+
+> **AI-powered code generation tool with gene-driven intelligence. 9 engines, AST+pentagon dual review, 790K gene library. pip install ready.**
 
 ## 一句话
 
-**2035永动架构的AI编程工具。9大引擎融合，基因驱动代码生成，五角思辨质量审查，联邦永动自进化。pip install即可用。**
+**基因驱动的世界级AI编程工具。9大引擎融合(GPC/KPS/注入/代码/AST/五角/FCL/FGI/MLGE)，79万LGE基因库实时注入，AST+五角双重智能审查。pip install即可用。**
 
 ## 快速开始
 
