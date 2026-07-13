@@ -5,11 +5,11 @@
 每60分钟刷新 · 天巡/小枢启动时预加载
 基因ID: GENE-PRO-hotcache-v1
 """
-import sqlite3, json, urllib.request, time, os
+import sqlite3, os
 from datetime import datetime
 
 DB = os.path.expanduser("~/lgox-ops/data/gene-hotcache.db")
-LGE_BASE = "http://100.116.0.29:8200"
+MIRROR_DB = os.path.expanduser("~/.hermes/lge-mirror/lge_mirror.db")
 SYNC_INTERVAL = 3600  # 60分钟
 
 def init_db():
@@ -32,30 +32,51 @@ def init_db():
     conn.commit()
     return conn
 
+
 def sync_from_lge(conn, limit=5000):
-    """从地枢LGE拉取高频基因·多域采样"""
+    """从灵龙本地LGE灾备镜像同步高频基因到热缓存
+    
+    降级策略: 地枢spark-5438离线时自动使用本地SQLite镜像(649K基因)
+    字段映射: memory_type→gene_type, fitness_score→fitness, source→domain
+    """
     try:
-        queries = ["联邦 节点 通讯", "金字塔 七自 基因", "Python async 修复",
-                   "SSH Tailscale 部署", "Widget V3 天巡", "金融 行情 信号",
-                   "无人机 巡检 机巢", "DeepSeek Ollama 模型", "nginx CORS 跨域",
-                   "踩坑 修复 基因", "LGOX 联邦 标准", "AI Box 入网"]
-        seen = set()
-        all_genes = []
+        mirror = sqlite3.connect(MIRROR_DB)
+        mirror.row_factory = sqlite3.Row
         
-        for q in queries:
-            payload = json.dumps({"query": q, "n_results": 50}).encode()
-            req = urllib.request.Request(f"{LGE_BASE}/genes/search",
-                data=payload, headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=15) as r:
-                data = json.loads(r.read())
-            for g in data.get("results", []):
-                gid = g.get("gene_id", "")
-                if gid not in seen:
+        # 多维度采样: 按fitness取TOP + 按类型分散采样
+        all_genes = []
+        seen = set()
+        
+        # 1) TOP N by fitness_score (高频基因优先)
+        rows = mirror.execute(
+            "SELECT * FROM genes WHERE status='active' AND fitness_score > 0 "
+            "ORDER BY fitness_score DESC LIMIT ?", (limit,)
+        ).fetchall()
+        for r in rows:
+            gid = r["gene_id"]
+            if gid and gid not in seen:
+                seen.add(gid)
+                all_genes.append(dict(r))
+        
+        # 2) 按类型补充采样(semantic/episodic/procedural各取一些)
+        for mtype in ("semantic", "episodic", "procedural"):
+            if len(all_genes) >= limit:
+                break
+            rows = mirror.execute(
+                "SELECT * FROM genes WHERE status='active' AND memory_type=? "
+                "ORDER BY fitness_score DESC LIMIT ?",
+                (mtype, max((limit - len(all_genes)) // 3, 500))
+            ).fetchall()
+            for r in rows:
+                gid = r["gene_id"]
+                if gid and gid not in seen:
                     seen.add(gid)
-                    all_genes.append(g)
+                    all_genes.append(dict(r))
+        
+        mirror.close()
         
         if not all_genes:
-            print(f"[{datetime.now():%H:%M}] ⚠️ 多域查询返回空·保留现有缓存")
+            print(f"[{datetime.now():%H:%M}] ⚠️ 镜像查询返回空·保留现有缓存")
             return 0
 
         conn.execute("DELETE FROM hot_genes")
@@ -63,16 +84,17 @@ def sync_from_lge(conn, limit=5000):
         
         for g in all_genes[:limit]:
             gid = g.get("gene_id", "")
-            content = g.get("content", "")[:500]
-            gtype = g.get("type", "unknown")
-            fitness = g.get("fitness", g.get("fitness_score", 0))
-            domain = g.get("domain", "general")
+            content = str(g.get("content", ""))[:500]  # 可能是JSON
+            gtype = g.get("memory_type", "unknown")
+            fitness = g.get("fitness_score", 0)
+            domain = g.get("source", "general")
             conn.execute("INSERT OR REPLACE INTO hot_genes VALUES (?,?,?,?,?,0,'','')",
                 (gid, content, gtype, fitness, domain))
             conn.execute("INSERT INTO hot_genes_fts VALUES (?,?)", (gid, content))
 
         conn.commit()
-        print(f"[{datetime.now():%H:%M}] ✅ 热缓存刷新: {len(all_genes[:limit])}条({len(queries)}域采样)")
+        print(f"[{datetime.now():%H:%M}] ✅ 热缓存刷新: {len(all_genes[:limit])}条 "
+              f"(fitness>0:{len([g for g in all_genes[:limit] if g.get('fitness_score',0)>0])})")
         return len(all_genes[:limit])
     except Exception as e:
         print(f"[{datetime.now():%H:%M}] ❌ 同步失败: {e}")
