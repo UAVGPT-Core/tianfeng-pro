@@ -16,21 +16,30 @@ from urllib.request import Request, urlopen
 TZ = timezone(timedelta(hours=8))
 STOCK_API = "http://100.100.89.2:8001"
 LGE_URL = "http://100.116.0.29:8200"
+LGE_LOCAL_URL = "http://127.0.0.1:8210"  # 灵龙本地灾备镜像 649K基因
 DATA_DIR = Path.home() / "lgox-ops/data"
 GROWTH_FILE = DATA_DIR / "silent-growth-metrics.json"
 
 # ─── 自我对弈题库(从基因库提取知识→生成模拟问题) ───
 SELF_PLAY_TOPICS = [
+    # LGOX联邦元问题(合规检查不触发)
     "LGOX联邦是什么",
-    "七自基因包括哪些能力",
+    "七自基因包括哪些能力", 
     "轻量化铁律的核心原则",
-    "联邦桥的作用是什么", 
+    "联邦桥的作用是什么",
     "小枢和天巡的区别",
-    "投资分析的免责边界在哪里",
-    "如何判断一个AI回答是否合规",
     "联邦节点间通信冗余如何设计",
     "什么是基因驱动的自治系统",
     "低空经济小模型的应用场景",
+    # 投资分析问题(触发免责/边界检查差异化得分)
+    "今天大盘走势如何分析",
+    "AI板块后续怎么看",
+    "低空经济赛道投资逻辑是什么",
+    "如何判断一只股票的趋势",
+    "量化策略的关键指标有哪些",
+    "请分析一下300750的形态",
+    "新能源汽车板块的后市预判",
+    "港股科技股的估值修复逻辑",
 ]
 
 def now_ts():
@@ -53,17 +62,40 @@ def save_json(path, data):
 def today_str():
     return datetime.now(TZ).strftime("%Y-%m-%d")
 
+def _lge_write(content, source, fitness=0.5):
+    """写入基因——主LGE优先+本地镜像降级"""
+    gene = {
+        "content": content,
+        "source": source,
+        "memory_type": "semantic",
+        "fitness": fitness
+    }
+    payload = json.dumps(gene).encode()
+    headers = {"Content-Type": "application/json", "X-LGE-Key": "lgox-federation-key-2024"}
+    
+    # 先试主LGE
+    for url in [LGE_URL, LGE_LOCAL_URL]:
+        try:
+            req = Request(f"{url}/genes/write", data=payload, headers=headers)
+            with urlopen(req, timeout=5) as r:
+                return json.loads(r.read())
+        except Exception as e:
+            last_err = e
+            continue
+    raise last_err
+
 def fetch_gene_knowledge():
-    """从LGE基因库拉最近的知识作为对弈素材"""
-    try:
-        req = Request(f"{LGE_URL}/genes/search?q=LGOX+联邦&limit=5",
-                     headers={"Content-Type": "application/json"})
-        with urlopen(req, timeout=8) as r:
-            genes = json.loads(r.read())
-            if isinstance(genes, list):
-                return [g.get("content", "")[:200] for g in genes[:3]]
-    except:
-        pass
+    """从LGE基因库拉最近的知识作为对弈素材——主LGE优先+本地镜像降级"""
+    for url in [LGE_URL, LGE_LOCAL_URL]:
+        try:
+            req = Request(f"{url}/genes/search?q=LGOX+联邦&limit=5",
+                         headers={"Content-Type": "application/json"})
+            with urlopen(req, timeout=5) as r:
+                genes = json.loads(r.read())
+                if isinstance(genes, list):
+                    return [g.get("content", "")[:200] for g in genes[:3]]
+        except:
+            continue
     return []
 
 def call_stockagent(role, question):
@@ -292,29 +324,35 @@ def silent_growth_v2(role):
     metrics["latest"] = overall
     save_json(GROWTH_FILE, metrics)
     
-    # 写入基因(仅当有实际生长)
+    # 写入基因(仅当有实际生长)——主LGE优先+本地镜像降级+队列兜底
     if play["avg_score"] > 0:
         try:
-            gene = {
-                "content": json.dumps({
-                    "role": role,
-                    "selfplay_score": play["avg_score"],
-                    "patterns": patterns.get("top", []),
-                    "audit": audit["score"]
-                }, ensure_ascii=False),
-                "source": f"{role}/silent-growth-v2",
-                "gene_type": "self_evolution",
-                "fitness_score": min(0.85, 0.4 + growth_score * 0.005)
-            }
-            req = Request(f"{LGE_URL}/genes/write",
-                         data=json.dumps(gene).encode(),
-                         headers={"Content-Type": "application/json"},
-                         method="POST")
-            with urlopen(req, timeout=8) as r:
-                resp = json.loads(r.read())
-                log(f"  🧬 {resp.get('gene_id', '?')}")
+            gene_content = json.dumps({
+                "role": role,
+                "selfplay_score": play["avg_score"],
+                "patterns": patterns.get("top", []),
+                "audit": audit["score"]
+            }, ensure_ascii=False)
+            resp = _lge_write(
+                content=gene_content,
+                source=f"{role}/silent-growth-v2",
+                fitness=min(0.85, 0.4 + growth_score * 0.005)
+            )
+            log(f"  🧬 {resp.get('gene_id', '?')}")
         except Exception as e:
-            log(f"  ⚠️ 基因写入: {e}")
+            log(f"  ⚠️ 基因写入失败，入队重试: {e}")
+            # 写入本地队列等待LGE恢复后重试
+            queue_file = DATA_DIR / "gene_queue.jsonl"
+            queue_entry = {
+                "source": f"{role}/silent-growth-v2",
+                "content": gene_content,
+                "fitness": min(0.85, 0.4 + growth_score * 0.005),
+                "queued_at": datetime.now(TZ).isoformat(),
+                "error": str(e)[:200]
+            }
+            with open(queue_file, "a") as f:
+                f.write(json.dumps(queue_entry, ensure_ascii=False) + "\n")
+            log(f"  📥 已加入本地基因队列({queue_file})")
     
     log(f"📊 {role} 生长分: {growth_score}")
     return results
