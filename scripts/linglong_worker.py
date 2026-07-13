@@ -37,14 +37,96 @@ PROCESSED_FILE = DATA_DIR / "processed_ids.txt"
 # 七自属性
 # ══════════════════════════════
 SEVEN_SELF = {
-    "自感知": "poll天枢桥·检查新消息",
+    "自感知": "poll天枢桥·检查新消息·FPC健康检测",
     "自协调": "过滤消息类型·路由到对应处理器",
-    "自愈合": "网络失败重试3次·降级到本地Ollama",
-    "自进化": "处理的每个共识写入LGA基因",
+    "自愈合": "网络失败重试3次·降级Ollama·跨节点FPC自动拉起",
+    "自进化": "处理的每个共识直连地枢LGE写入基因",
     "自迭代": "下次遇到同类问题优先级更高",
-    "自反思": "定期审计处理成功率",
+    "自反思": "定期审计处理成功率·FPC守护日志",
     "自约束": "不处理危险命令·不越权"
 }
+
+# ══════════════════════════════
+# FPC守护者 — 七自·自愈合的物理实现
+# ══════════════════════════════
+FPC_NODES = {
+    "天工": {"host": "spark-abbd", "ssh": "dgx1", "port": 8790, "script": "~/lgox-ops/scripts/federation_perpetual_core.py"},
+    "地枢": {"host": "spark-5438", "ssh": "dgx2", "port": 8790, "script": "~/lgox-ops/scripts/federation_perpetual_core.py"},
+}
+FPC_CHECK_INTERVAL = 300  # 每5分钟
+FPC_FAIL_THRESHOLD = 2     # 连续失败2次才拉起
+
+fpc_failures = {}  # node_name → consecutive_failures
+fpc_heal_count = 0
+
+def check_fpc_health(node_name, cfg):
+    """检测远程节点FPC是否存活"""
+    try:
+        url = f"http://{cfg['host']}:{cfg['port']}/health"
+        resp = request.urlopen(url, timeout=5)
+        data = json.loads(resp.read())
+        return data.get("status") == "ok"
+    except:
+        return False
+
+def heal_fpc(node_name, cfg):
+    """SSH远程拉起FPC——跨节点自愈"""
+    global fpc_heal_count
+    ssh_alias = cfg["ssh"]
+    script = cfg["script"]
+
+    # 先杀旧进程再拉起
+    cmd = (f"ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no {ssh_alias} "
+           f"\"kill \\$(pgrep -f federation_perpetual) 2>/dev/null; sleep 1; "
+           f"nohup python3 {script} > ~/lgox-ops/logs/fpc.log 2>&1 & disown\"")
+    try:
+        result = os.popen(cmd).read()
+        fpc_heal_count += 1
+
+        # 纳基因——每次自愈都是联邦的记忆
+        gene = {
+            "content": f"[联邦自愈] 灵龙Worker检测到{node_name}FPC离线→SSH远程拉起。 "
+                       f"cmd: {cmd[:100]}... 第{fpc_heal_count}次跨节点自愈。",
+            "memory_type": "episodic",
+            "source": "灵龙/FPC守护者/自愈合",
+            "fitness_score": 0.9
+        }
+        try:
+            data = json.dumps(gene).encode()
+            req = request.Request(LGE_DIRECT, data=data,
+                headers={"Content-Type": "application/json", "X-LGE-Key": LGE_KEY})
+            request.urlopen(req, timeout=8)
+        except:
+            pass
+
+        return True
+    except Exception as e:
+        log(f"FPC拉起{node_name}失败: {str(e)[:60]}", "WARN")
+        return False
+
+def fpc_guardian_cycle():
+    """FPC守护循环——检测→累计→拉起→纳基因"""
+    global fpc_failures
+    healed = []
+
+    for node_name, cfg in FPC_NODES.items():
+        healthy = check_fpc_health(node_name, cfg)
+        prev = fpc_failures.get(node_name, 0)
+
+        if healthy:
+            if prev > 0:
+                log(f"🟢 {node_name}FPC恢复({prev}次失败后自愈)")
+            fpc_failures[node_name] = 0
+        else:
+            fpc_failures[node_name] = prev + 1
+            if prev + 1 >= FPC_FAIL_THRESHOLD and prev < FPC_FAIL_THRESHOLD:
+                log(f"🔴 {node_name}FPC连续{prev+1}次离线→启动跨节点自愈...")
+                if heal_fpc(node_name, cfg):
+                    healed.append(node_name)
+                    fpc_failures[node_name] = 0  # 重置计数
+                    log(f"✅ {node_name}FPC已远程拉起")
+
+    return healed
 
 def log(msg, level="INFO"):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
@@ -103,8 +185,11 @@ def reply_to_bridge(msg_id, reply_content, original_from):
         log(f"回复失败: {e}", "WARN")
         return False
 
+LGE_DIRECT = "http://100.116.0.29:8200/genes/write"
+LGE_KEY = "fbe0b015eb7a03727903b660c4cecc60"
+
 def write_consensus_gene(question, answers, result):
-    """共识结果写入LGA基因"""
+    """共识结果直连地枢LGE——不经过LGA中转"""
     gene = {
         "content": f"[联邦共识] Q: {question[:200]} | 节点: {len(answers)}个 | 结果: {result[:300]}",
         "memory_type": "episodic",
@@ -112,6 +197,15 @@ def write_consensus_gene(question, answers, result):
         "fitness_score": 0.85
     }
     data = json.dumps(gene).encode()
+    # 主通路: 直连地枢LGE
+    try:
+        req = request.Request(LGE_DIRECT, data=data,
+            headers={"Content-Type": "application/json", "X-LGE-Key": LGE_KEY})
+        request.urlopen(req, timeout=8)
+        return
+    except:
+        pass
+    # 降级: LGA本地缓存
     try:
         req = request.Request(f"{LGA}/genes/write", data=data,
             headers={"Content-Type": "application/json", "X-LGA-Key": "local"})
@@ -236,17 +330,22 @@ def sse_loop():
 
                 poll_errors = 0  # 成功→重置
 
-                # 每5分钟心跳+更新STATE
+                # 每5分钟心跳+更新STATE+FPC守护
                 if now - last_health_report > 300:
+                    # FPC守护——七自·自愈合
+                    healed = fpc_guardian_cycle()
                     state = {
                         "total_processed": total_processed,
                         "last_poll": datetime.now().isoformat(),
                         "mode": "poll",
                         "ollama": "ok",
-                        "msgs_in_queue": len(msgs)
+                        "msgs_in_queue": len(msgs),
+                        "fpc_heals": fpc_heal_count,
+                        "fpc_failures": fpc_failures
                     }
                     json.dump(state, STATE_FILE.open("w"), ensure_ascii=False)
-                    log(f"🫀 poll心跳: 处理{total_processed}条·队列{len(msgs)}·错误{poll_errors}")
+                    heal_msg = f"·自愈{len(healed)}次" if healed else ""
+                    log(f"🫀 poll心跳: 处理{total_processed}条·队列{len(msgs)}·FPC守护{heal_msg}·错误{poll_errors}")
                     last_health_report = now
 
             except Exception as e:
