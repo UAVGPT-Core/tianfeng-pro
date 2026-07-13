@@ -566,7 +566,7 @@ def update_adaptive_state(dim, difficulty, passed, score):
         state["total_passed"] += 1
         dim_state["streak"] = max(0, dim_state["streak"]) + 1  # 正向累计
         # 连过3题升级
-        if dim_state["streak"] >= 3 and difficulty != "extreme":
+        if dim_state["streak"] >= 3 and difficulty != "hard":  # 封顶hard — extreme>35s/轮会导致cron 120s超时
             levels = ["easy", "medium", "hard", "extreme"]
             idx = levels.index(difficulty)
             if idx < len(levels) - 1:
