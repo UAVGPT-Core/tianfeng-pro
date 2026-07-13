@@ -1,91 +1,54 @@
 #!/usr/bin/env python3
-"""
-天锋PRO · 自动同步飞轮 v1.0
-本地修改 → 自动commit → GitHub推送 → PyPI发布 → 全闭环
-2026-07-13 · 零token·cron永动
-"""
-import subprocess, os, json, time, sys
+"""天锋PRO 双仓自动同步飞轮 v2.0·GitHub+Gitee"""
+import subprocess, os, time, sys
 from pathlib import Path
 
-REPO_DIR = Path.home() / "lgox-ops"
-GIT_SSH = "ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o ConnectTimeout=10"
+R = Path.home() / "lgox-ops"
+K = Path.home() / ".ssh/id_ed25519"
+REMOTES = [
+    {"name": "GitHub", "url": "git@github.com:UAVGPT-Core/tianfeng-pro.git"},
+    {"name": "Gitee",  "url": "https://uavgpt:PLACEHOLDER@gitee.com/uavgpt/tianfeng-pro.git"},
+]
 
-def run(cmd_list, cwd=REPO_DIR, timeout=30):
+def run(cmd_list, cwd=R, timeout=30, env=None):
     try:
-        r = subprocess.run(cmd_list, capture_output=True, text=True, 
-                          cwd=str(cwd), timeout=timeout)
+        r = subprocess.run(cmd_list, capture_output=True, text=True, cwd=str(cwd), timeout=timeout, env=env)
         return r.returncode == 0, r.stdout.strip(), r.stderr.strip()
-    except:
-        return False, "", "timeout"
+    except: return False, "", "timeout"
 
 def auto_sync():
-    os.chdir(str(REPO_DIR))
+    os.chdir(str(R))
+    ok, s, _ = run(["git", "status", "-s"])
+    if not s: return "clean"
 
-    # 1. 检查未提交变更
-    ok, status, _ = run(["git", "status", "-s"])
-    if not status:
-        return {"status": "clean", "msg": "无变更"}
-
-    changes = len(status.split("\n"))
-    
-    # 2. 自动提交
+    n = len(s.split("\n"))
     run(["git", "add", "-A"])
-    commit_msg = "auto: 同步飞轮 {} {}文件".format(time.strftime("%m%d-%H%M"), changes)
-    ok, out, err = run(["git", "commit", "-m", commit_msg])
-    if not ok:
-        return {"status": "skip", "msg": f"commit跳过: {err[:100]}"}
+    msg = f"auto: sync {time.strftime('%m%d-%H%M')} {n}f"
+    ok, _, err = run(["git", "commit", "-m", msg])
+    if not ok and "nothing to commit" in err: return "skip"
 
-    # 3. GitHub推送
-    import os as _os
-    env = _os.environ.copy()
-    env["GIT_SSH_COMMAND"] = "ssh -i {}/.ssh/id_ed25519 -o IdentitiesOnly=yes -o ConnectTimeout=10".format(str(Path.home()))
-    try:
-        r = subprocess.run(["git", "push", "origin", "main"], capture_output=True, text=True, 
-                          cwd=str(REPO_DIR), timeout=60, env=env)
-        ok = r.returncode == 0
-        out = r.stdout.strip()
-        err = r.stderr.strip()
-    except:
-        ok, out, err = False, "", "timeout"
-    if not ok:
-        return {"status": "push_failed", "msg": err[:200]}
-
-    pushed = True
-    msg = f"✅ GitHub: {changes}个文件"
-
-    # 4. PyPI发布(仅当setup.py变更时)
-    ok2, diff, _ = run(["git", "diff", "HEAD~1", "--name-only"])
-    if "setup.py" in diff:
-        msg += " | PyPI: 跳过(非版本升级)"  # 保守策略·仅手动发布PyPI
-
-    return {"status": "synced", "msg": msg, "changes": changes, "pushed_github": True}
-
-def status():
-    """当前同步状态"""
-    os.chdir(str(REPO_DIR))
-    ok, remote, _ = run(["git", "remote", "-v"])
-    ok2, branch, _ = run(["git", "branch", "--show-current"])
-    ok3, last, _ = run(["git", "log", "--oneline", "-1"])
-    ok4, unstaged, _ = run(["git", "status", "-s"])
-    unpushed = len(unstaged.split("\n")) if unstaged else 0
-
-    print(f"""
-╔══════════════════════════════════════╗
-║  天锋PRO · 自动同步飞轮               ║
-╠══════════════════════════════════════╣
-║  远程: GitHub SSH                     ║
-║  分支: {branch:30s} ║
-║  最后: {last[:45]:45s} ║
-║  待推: {unpushed:>4} 文件                   ║
-╚══════════════════════════════════════╝""")
+    results = []
+    for remote in REMOTES:
+        try:
+            env = os.environ.copy()
+            if remote["name"] == "GitHub":
+                env["GIT_SSH_COMMAND"] = f"ssh -i {K} -o IdentitiesOnly=yes -o ConnectTimeout=10"
+                ok, out, err = run(["git", "push", "origin", "main"], timeout=60, env=env)
+            else:
+                # Gitee HTTPS push with token from env
+                gt = os.environ.get("GITEE_TOKEN", "")
+                if not gt:
+                    results.append(f"Gitee: 缺token")
+                    continue
+                gitee_url = remote["url"].replace("PLACEHOLDER", gt)
+                ok, out, err = run(["git", "push", gitee_url, "main"], timeout=60)
+            
+            results.append(f"{remote['name']}: {'✅' if ok else '❌ '+err[:50]}")
+        except Exception as e:
+            results.append(f"{remote['name']}: {str(e)[:50]}")
+    
+    return " | ".join(results)
 
 if __name__ == "__main__":
-    cmd = sys.argv[1] if len(sys.argv) > 1 else "sync"
-    if cmd == "sync":
-        result = auto_sync()
-        print(f"🔄 {result['msg']}")
-    elif cmd == "status":
-        status()
-    elif cmd == "force":
-        result = auto_sync()
-        print(result)
+    r = auto_sync()
+    print(f"🔄 {r}")
