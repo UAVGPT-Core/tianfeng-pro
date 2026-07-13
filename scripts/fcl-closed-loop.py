@@ -367,4 +367,7 @@ if __name__ == "__main__":
         db.close()
 
     else:
-        ap.print_help()
+        # Default: cron mode (no-arg invocation = execute full heartbeat)
+        result = fcl_heartbeat()
+        if args.json:
+            print(json.dumps(result, indent=2, ensure_ascii=False))
