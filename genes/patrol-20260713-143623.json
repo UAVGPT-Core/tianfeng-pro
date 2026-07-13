@@ -1,0 +1,47 @@
+{
+  "ts": "20260713-143623",
+  "source": "灵龙/连通器巡检",
+  "type": "patrol",
+  "status": "degraded",
+  "nodes": {
+    "offline_alert": [
+      {
+        "node": "地枢",
+        "offline_min": 343,
+        "services": "LGE/Onyx/Grafana"
+      },
+      {
+        "node": "天玑",
+        "offline_min": 1058,
+        "services": "Hermes(WSL)"
+      }
+    ],
+    "offline_expected": [
+      {
+        "node": "天怿",
+        "offline_min": 1058,
+        "note": "AI Box间歇"
+      }
+    ],
+    "online": [
+      "天枢",
+      "天工",
+      "灵龙",
+      "织网",
+      "天巡(api)",
+      "太一(桥)"
+    ],
+    "online_healthy": [
+      "天枢",
+      "天工",
+      "灵龙",
+      "织网",
+      "天巡"
+    ]
+  },
+  "backlog": {
+    "total_unread": 54,
+    "per_node": "地枢9·太一5·AI助手3·天巡3·天怿3·小枢3"
+  },
+  "heartbeat_ok": true
+}
