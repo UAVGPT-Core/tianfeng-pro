@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-07-13 23:47 CST",
+  "type": "connectivity_patrol",
+  "source": "灵龙",
+  "script": "联邦连通器巡检",
+  "bridge_health": {
+    "total": 17,
+    "online": 5,
+    "offline": 3
+  },
+  "online_nodes": [
+    "天枢",
+    "灵龙",
+    "天工",
+    "太一",
+    "织网"
+  ],
+  "offline_30min_nodes": {
+    "地枢": {
+      "duration_h": 6.9,
+      "status": "LGE直连+SSH皆不通"
+    },
+    "天玑": {
+      "duration_h": 18.8,
+      "status": "SSH端口通·桥心跳断联·假阳性可能性大"
+    },
+    "天怿": {
+      "duration_h": 18.8,
+      "status": "AI Box预期间歇节点"
+    }
+  },
+  "backlog": {
+    "total_unread": 11
+  },
+  "genes_written": 0,
+  "note": "地枢离线→LGE不可达→基因写入失败→本地归档"
+}
