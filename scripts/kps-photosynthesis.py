@@ -18,7 +18,9 @@ from pathlib import Path
 from collections import defaultdict
 
 KPS_DB = os.path.expanduser("~/lgox-ops/data/kps-photosynthesis.db")
-LGE_ENDPOINT = "http://100.116.0.29:8200"
+LGE_ENDPOINT = "http://100.116.0.29:8200"       # 地枢·主LGE
+LGE_FALLBACK = "http://127.0.0.1:8210"           # 灵龙·本地灾备镜像
+LGE_TIMEOUT = 2                                   # 2s超时
 
 # ─── 光谱源(免费·零成本) ────────────────────────
 
@@ -44,13 +46,8 @@ LIGHT_SOURCES = {
         "extractor": "_extract_github",
         "category": "open_source",
     },
-    "huggingface_models": {
-        "name": "HuggingFace Models",
-        "url": "https://huggingface.co/api/models?sort=downloads&direction=-1&limit=10",
-        "type": "json",
-        "extractor": "_extract_hf",
-        "category": "ml_models",
-    },
+    # ⛔ HuggingFace 持续不可达(No route to host) — 暂时关闭节省15s超时
+    # "huggingface_models": { ... },
 }
 
 # ─── 内置知识模式(当外部源不可达时) ──────────────
@@ -192,7 +189,7 @@ def absorb_light():
         try:
             # 获取外部数据
             req = urllib.request.Request(config["url"], headers={"User-Agent": "GPC-KPS/1.0"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 raw = resp.read()
 
             # 提取
@@ -287,22 +284,26 @@ def _convert_to_gene(entry: dict, category: str, source: str) -> str:
 
 
 def _write_gene(content: str, category: str, source: str) -> str:
-    """写基因到LGE"""
-    try:
-        req = urllib.request.Request(
-            f"{LGE_ENDPOINT}/genes/write",
-            data=json.dumps({
-                "content": content,
-                "memory_type": "semantic",
-                "source": f"kps-{source}",
-            }).encode(),
-            headers={"Content-Type": "application/json"},
-        )
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            return json.loads(resp.read()).get("id", "")
-    except Exception as e:
-        print(f"[KPS] Gene write error: {e}", file=sys.stderr)
-        return ""
+    """写基因到LGE — 主LGE→本地灾备自动降级"""
+    endpoints = [LGE_ENDPOINT, LGE_FALLBACK]
+    for ep in endpoints:
+        try:
+            req = urllib.request.Request(
+                f"{ep}/genes/write",
+                data=json.dumps({
+                    "content": content,
+                    "memory_type": "semantic",
+                    "source": f"kps-{source}",
+                }).encode(),
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=LGE_TIMEOUT) as resp:
+                gene_id = json.loads(resp.read()).get("id", "")
+                if gene_id:
+                    return gene_id
+        except Exception:
+            continue
+    return ""
 
 
 def run_builtin_photosynthesis():
