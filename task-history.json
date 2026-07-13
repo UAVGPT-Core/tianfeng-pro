@@ -1,101 +1,5 @@
 [
   {
-    "task_id": "4b7ea280",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "7ad65055",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "08bd7970",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "5751afc5",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "08ddcc51",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "b2307f56",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "277effc0",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "01ddd55b",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "8e0e341c",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "53bff70a",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "813bec58",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "6c7fadca",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "6c7fadca",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "c9b292e2",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "52ce7231",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "5380d947",
-    "status": "roundtable_replied",
-    "output": "提案回执：  \n**LGOX联邦六合通圆桌提案**  \nMID: `liuhe-tong-20260714-053814`  \nFROM: 天枢（注意：当前成员列表为 `[\"天巡\",\"小枢\"]`，与发件人名称存在差异，但通路已确认）  \n\n### 实时系统状态回执（基于真实数据）：\n- **圆桌18772**：`status: ok`，引擎 `LOGOS圆桌_v2.0`，动态发现启用，端口1877",
-    "error": ""
-  },
-  {
     "task_id": "c684805a",
     "status": "skipped",
     "output": "no_action",
@@ -2947,6 +2851,102 @@
   },
   {
     "task_id": "96085177",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "f3083ca2",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "b477e723",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "f3083ca2",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "b477e723",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "f3083ca2",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "b477e723",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "f3083ca2",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "b477e723",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "f3083ca2",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "b477e723",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "f3083ca2",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "b477e723",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "f3083ca2",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "b477e723",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "f3083ca2",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "b477e723",
     "status": "skipped",
     "output": "no_action",
     "error": ""
