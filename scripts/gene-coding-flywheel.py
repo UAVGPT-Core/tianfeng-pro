@@ -19,10 +19,19 @@ from datetime import datetime
 from pathlib import Path
 
 HOME = Path(os.environ.get("HOME", "/Users/a112233"))
-LGE_URL = "http://100.116.0.29:8200"  # 地枢LGE基因库（791K基因·支持搜索），灵龙可通过Tailscale直达
+# LGE基因库集群（三级降级: 地枢主库→天枢LGE→灵龙LGA本地）
+LGE_POOL = [
+    "http://100.116.0.29:8200",   # 【主】地枢DGX2（791K基因）
+    "http://100.100.89.2:8201",   # 【备1】天枢LGE Studio（829基因）
+    "http://127.0.0.1:8202",      # 【备2】灵龙LGA本地代理（33基因）
+]
+LGE_URL = "http://100.116.0.29:8200"  # 保留原变量名作为默认首选
 FTS5_DB = HOME / "lge-studio/data/lge_fts.db"  # 不存在于灵龙，仅在天枢
 FLYWHEEL_DB = HOME / "lgox-ops/data/gene-coding-flywheel.db"
 MY_NODE = "灵龙"
+
+# 节点连通性缓存（减少重试）
+_connectivity_cache = {}
 
 # ══════════════════════════════════════════
 # 引擎
@@ -69,16 +78,47 @@ def search_fts5(query, limit=10):
 
 
 def search_lge(query, limit=5):
-    """LGE语义检索·地枢直连（联邦桥safe-top-idf引擎召回0）"""
-    try:
-        data = json.dumps({"query": query, "n_results": limit}).encode()
-        req = urllib.request.Request(LGE_URL + "/genes/search", data=data,
-                                      headers={"Content-Type": "application/json"})
-        resp = urllib.request.urlopen(req, timeout=10)
-        return [r.get("content", "") for r in json.loads(resp.read()).get("results", [])]
-    except Exception as e:
-        print(f"  [WARN] search_lge({LGE_URL})失败: {e}", file=__import__('sys').stderr)
-        return []
+    """LGE语义检索·三级降级（地枢→天枢→灵龙LGA本地）·连通性缓存避免重复重试"""
+    global _connectivity_cache
+    timeout_per_node = 5
+
+    # 只尝试已知在线或未测试过的节点
+    candidates = []
+    for url in LGE_POOL:
+        status = _connectivity_cache.get(url)
+        if status is None:  # 从未测试过
+            candidates.append(url)
+        elif status:  # 上次在线
+            candidates.insert(0, url)  # 优先尝试
+    if not candidates:
+        candidates = LGE_POOL  # 都标记离线了，还是试一下
+
+    for url in candidates:
+        status = _connectivity_cache.get(url)
+        if status is False:
+            continue  # 已确认离线，跳过
+
+        try:
+            data = json.dumps({"query": query, "n_results": limit}).encode()
+            req = urllib.request.Request(url + "/genes/search", data=data,
+                                          headers={"Content-Type": "application/json"})
+            resp = urllib.request.urlopen(req, timeout=timeout_per_node)
+            results = [r.get("content", "") for r in json.loads(resp.read()).get("results", [])]
+            if results:
+                _connectivity_cache[url] = True  # 标记在线
+                print(f"  [OK] search_lge({url}) → {len(results)}条", file=__import__('sys').stderr)
+                return results
+        except urllib.error.HTTPError as e:
+            print(f"  [WARN] {url} HTTP {e.code}", file=__import__('sys').stderr)
+            if e.code == 500:
+                _connectivity_cache[url] = False  # 服务端异常，标记离线
+            continue
+        except Exception as e:
+            print(f"  [WARN] {url}不可达: {str(e)[:40]}", file=__import__('sys').stderr)
+            _connectivity_cache[url] = False  # 标记离线
+            continue
+
+    return []  # 所有节点都不可达
 
 
 def extract_coding_genes(task_description):
