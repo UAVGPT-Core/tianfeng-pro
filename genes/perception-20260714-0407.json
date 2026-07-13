@@ -1,0 +1,22 @@
+{
+  "type": "patrol_report",
+  "timestamp": "2026-07-14 04:07",
+  "node": "灵龙",
+  "action": "xiaoshu_fed_v2_ping (fallback: bridge /nodes)",
+  "summary": {
+    "total_nodes": 17,
+    "online": 8,
+    "offline_over_30min": [
+      {"name": "地枢", "mins_offline": 675, "role": "LGE基因引擎+Onyx+监控", "lge_engine": "up (but node heartbeat stale)"},
+      {"name": "天怿", "mins_offline": 1390, "role": "AI Box·预期休眠", "expected": true}
+    ],
+    "removed_nodes": ["Codex","LGOX-CC","天巡","天玑-WSL","天锋PRO","小枢","智谱GLM","太一-WSL"],
+    "service_issues": [
+      {"node": "太一", "services_down": ["Ollama(Windows)","OpenClaw API"], "note": "便携节点·预期"},
+      {"node": "天玑", "services_down": ["Hermes(WSL)","ChromeCDP"], "note": "WSL服务"},
+      {"node": "AI助手", "note": "status=?无心跳注册"}
+    ],
+    "lge_writable": false,
+    "bridge_notified": true
+  }
+}
