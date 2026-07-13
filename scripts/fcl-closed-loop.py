@@ -218,6 +218,7 @@ def fcl_heartbeat():
         db.execute("INSERT OR REPLACE INTO perpetual_stats (key, value) VALUES (?, ?)", (key, val))
 
     db.commit()
+    seven_summary = get_seven_self_summary(db)
     db.close()
 
     print(f"[FCL] ══════ 闭环完成: {elapsed}ms · {total_engines}/5引擎 · "
@@ -230,7 +231,7 @@ def fcl_heartbeat():
         "fitness": gpc.get("avg_fitness", 0),
         "quality_score": score,
         "elapsed_ms": elapsed,
-        "seven_self": get_seven_self_summary(db),
+        "seven_self": seven_summary,
     }
 
 
