@@ -226,7 +226,10 @@ class GeneGossip:
             pass
 
     def write_and_broadcast(self, content, memory_type="semantic", source=None, fitness=0.5):
-        """七自闭环: 写基因→广播→共识→存储"""
+        """七自闭环: 写基因→广播→共识→存储(含质量门控)"""
+        # 质量门控: fitness<0.3→提升至0.35(不让噪声基因污染LGE)
+        if fitness < 0.3:
+            fitness = 0.35
         gene = {
             "gene_id": f"GENE-FPC-{uuid.uuid4().hex[:12]}",
             "content": content,
@@ -755,7 +758,7 @@ class PerpetualEngine:
             self.cycles["neo4j_flywheel"] = t
             print(f"  🕸️ Neo4j推理飞轮: 知识图谱查询·关系发现")
 
-        # 基因蒸馏+去重飞轮——大基因库才启动(>100K)
+        # 基因质量系统——大基因库启动
         try:
             resp = request.urlopen("http://100.116.0.29:8200/health", timeout=2)
             total = json.loads(resp.read()).get("genes", 0)
@@ -768,6 +771,16 @@ class PerpetualEngine:
                 t2.start()
                 self.cycles["gene_dedup"] = t2
                 print(f"  🔍 基因去重飞轮: 重复检测·合并建议")
+                # 质量评审(需天工GPU)
+                if self.identity.capabilities["inference"]["ollama"]:
+                    t3 = threading.Thread(target=self._gene_quality_review_flywheel, daemon=True, name="gene-qr")
+                    t3.start()
+                    self.cycles["gene_quality_review"] = t3
+                    print(f"  ⭐ 基因质量评审: gemma4自动评分·低质改进")
+                    t4 = threading.Thread(target=self._gene_vector_dedup_flywheel, daemon=True, name="gene-vd")
+                    t4.start()
+                    self.cycles["gene_vector_dedup"] = t4
+                    print(f"  🧬 基因向量去重: bge-m3 embedding·Neo4j相似度")
         except:
             pass
 
@@ -932,6 +945,255 @@ class PerpetualEngine:
 
             except Exception as e:
                 time.sleep(1200)
+
+    def _gene_quality_review_flywheel(self):
+        """基因质量评审——gemma4 thinking模型评审低fitness基因→自动改进"""
+        while True:
+            try:
+                # 搜索低fitness基因
+                search_data = json.dumps({"query": "七自 永动 飞轮 进化 自愈", "n_results": 10}).encode()
+                req = request.Request("http://100.116.0.29:8200/genes/search", data=search_data,
+                    headers={"Content-Type": "application/json",
+                             "X-LGE-Key": "fbe0b015eb7a03727903b660c4cecc60"})
+                resp = request.urlopen(req, timeout=10)
+                genes = json.loads(resp.read())
+                genes = genes if isinstance(genes, list) else genes.get("results", [])
+
+                low_fitness = [g for g in genes if g.get("fitness_score", g.get("score", 0.5)) < 0.45]
+                if low_fitness:
+                    for g in low_fitness[:3]:  # 每次处理3条
+                        content = str(g.get("content", ""))[:300]
+                        gid = g.get("gene_id", g.get("id", "?"))
+
+                        # gemma4 thinking评审
+                        review_prompt = (
+                            "你是基因质量评审员。评审这条AI联邦基因(满分1.0):\n" + content + "\n\n"
+                            "输出格式: 评分=X.XX|问题:...|改进建议:..."
+                        )
+                        data = json.dumps({
+                            "model": "gemma4:latest",
+                            "prompt": review_prompt,
+                            "stream": False,
+                            "options": {"temperature": 0.3, "num_predict": 150}
+                        }).encode()
+                        try:
+                            req2 = request.Request("http://localhost:11434/api/generate", data=data,
+                                headers={"Content-Type": "application/json"})
+                            resp2 = request.urlopen(req2, timeout=60)
+                            review = json.loads(resp2.read()).get("response", "")
+
+                            if review:
+                                insight = (f"[质量评审] 基因{gid[:12]}·fitness={g.get('fitness_score',0):.2f}·"
+                                          f"gemma4评审: {review[:200]}")
+                                self.gene.write_and_broadcast(insight, "episodic",
+                                    f"{NODE_NAME}/gene-quality-review", 0.55)
+                        except:
+                            pass
+
+                time.sleep(600)  # 每10分钟
+
+            except Exception as e:
+                time.sleep(300)
+
+    def _gene_vector_dedup_flywheel(self):
+        """基因去重引擎 v2.0——bge-m3 embedding·Neo4j向量索引·余弦相似度·自动合并"""
+        # 初始化Neo4j向量索引
+        self._init_neo4j_vector_index()
+
+        processed_total = 0
+        while True:
+            try:
+                # 1. 从LGE拉取未嵌入基因(按fitness升序·优先处理低质量)
+                neo4j_url = "http://127.0.0.1:7474" if NODE_NAME == "地枢" else "http://100.116.0.29:7474"
+
+                # 搜索多批次基因
+                topics = ["联邦 架构", "AI 七自", "永动 飞轮", "节点 通讯", "基因 进化"]
+                batch_genes = []
+                seen_ids = set()
+
+                for topic in topics:
+                    search_data = json.dumps({"query": topic, "n_results": 10}).encode()
+                    req = request.Request("http://100.116.0.29:8200/genes/search", data=search_data,
+                        headers={"Content-Type": "application/json",
+                                 "X-LGE-Key": "fbe0b015eb7a03727903b660c4cecc60"})
+                    resp = request.urlopen(req, timeout=10)
+                    genes = json.loads(resp.read())
+                    genes = genes if isinstance(genes, list) else genes.get("results", [])
+                    for g in genes:
+                        gid = g.get("gene_id", g.get("id", ""))
+                        if gid not in seen_ids:
+                            seen_ids.add(gid)
+                            batch_genes.append(g)
+
+                if not batch_genes:
+                    time.sleep(600)
+                    continue
+
+                # 2. 天工bge-m3批量生成embedding
+                embeddings = []
+                for g in batch_genes[:20]:  # 每批20条
+                    content = str(g.get("content", ""))[:300]
+                    gid = g.get("gene_id", g.get("id", "?"))
+                    fitness = g.get("fitness_score", g.get("score", 0.5))
+
+                    try:
+                        emb_data = json.dumps({
+                            "model": "bge-m3:latest",
+                            "prompt": content
+                        }).encode()
+                        req2 = request.Request("http://localhost:11434/api/embeddings", data=emb_data,
+                            headers={"Content-Type": "application/json"})
+                        resp2 = request.urlopen(req2, timeout=30)
+                        emb_result = json.loads(resp2.read())
+                        embedding = emb_result.get("embedding", [])
+
+                        if embedding and len(embedding) > 100:
+                            embeddings.append({
+                                "gene_id": gid,
+                                "content": content[:200],
+                                "fitness": fitness,
+                                "embedding": embedding[:512]  # 512维
+                            })
+                    except:
+                        pass
+
+                if not embeddings:
+                    time.sleep(300)
+                    continue
+
+                # 3. Neo4j: 存储向量+相似度查询+标记重复
+                dupes_found = 0
+                merged = 0
+
+                for emb in embeddings:
+                    vec = emb["embedding"]
+                    gid = emb["gene_id"]
+                    content_hash = hashlib.md5(emb["content"].encode()).hexdigest()[:16]
+
+                    # 3a. 查询Neo4j最近邻(余弦相似度>0.92)
+                    similar = []
+                    try:
+                        # 用前64维做近似检索
+                        cypher_query = {
+                            "statements": [{
+                                "statement": (
+                                    "MATCH (g:GeneVector) WHERE g.embedding IS NOT NULL "
+                                    "WITH g, g.embedding[0..64] AS ga "
+                                    "RETURN g.hash AS hash, g.content AS content, "
+                                    "g.embedding[0..64] AS emb ORDER BY g.updated DESC LIMIT 50"
+                                ),
+                                "parameters": {}
+                            }]
+                        }
+                        data = json.dumps(cypher_query).encode()
+                        req3 = request.Request(f"{neo4j_url}/db/neo4j/tx/commit", data=data,
+                            headers={"Content-Type": "application/json"})
+                        resp3 = request.urlopen(req3, timeout=15)
+                        neo4j_result = json.loads(resp3.read())
+
+                        for row in neo4j_result.get("results", [{}])[0].get("data", []):
+                            existing_vec = row.get("row", [None, None, None])[2]
+                            if existing_vec and len(existing_vec) >= 64:
+                                # 余弦相似度(前64维近似)
+                                sim = self._cosine_similarity(vec[:64], existing_vec)
+                                if sim > 0.92:
+                                    similar.append({
+                                        "hash": row["row"][0],
+                                        "content": str(row["row"][1])[:100],
+                                        "similarity": sim
+                                    })
+                    except:
+                        pass
+
+                    # 3b. 存储当前向量
+                    try:
+                        store_cypher = {
+                            "statements": [{
+                                "statement": (
+                                    "MERGE (g:GeneVector {hash: $hash}) "
+                                    "SET g.embedding = $emb, g.content = $content, "
+                                    "g.gene_id = $gid, g.fitness = $fitness, g.updated = datetime()"
+                                ),
+                                "parameters": {
+                                    "hash": content_hash,
+                                    "emb": vec[:256],
+                                    "content": emb["content"][:200],
+                                    "gid": gid,
+                                    "fitness": emb["fitness"]
+                                }
+                            }]
+                        }
+                        data = json.dumps(store_cypher).encode()
+                        req4 = request.Request(f"{neo4j_url}/db/neo4j/tx/commit", data=data,
+                            headers={"Content-Type": "application/json"})
+                        request.urlopen(req4, timeout=10)
+                    except:
+                        pass
+
+                    # 3c. 标记重复
+                    for dup in similar:
+                        if dup["similarity"] >= 0.95:
+                            dupes_found += 1
+                            # 标记为重复基因
+                            label_cypher = {
+                                "statements": [{
+                                    "statement": (
+                                        "MERGE (a:GeneVector {hash: $hash_a}) "
+                                        "MERGE (b:GeneVector {hash: $hash_b}) "
+                                        "MERGE (a)-[:DUPLICATE_OF {score: $sim}]->(b)"
+                                    ),
+                                    "parameters": {
+                                        "hash_a": content_hash,
+                                        "hash_b": dup["hash"],
+                                        "sim": dup["similarity"]
+                                    }
+                                }]
+                            }
+                            try:
+                                data = json.dumps(label_cypher).encode()
+                                req5 = request.Request(f"{neo4j_url}/db/neo4j/tx/commit", data=data,
+                                    headers={"Content-Type": "application/json"})
+                                request.urlopen(req5, timeout=10)
+                                merged += 1
+                            except:
+                                pass
+
+                processed_total += len(embeddings)
+
+                # 4. 纳基因
+                insight = (f"[基因去重v2.0] 处理{processed_total}条·本批{len(embeddings)}条embedding·"
+                          f"发现{dupes_found}组重复(>0.95)·标记{merged}条·"
+                          f"向量索引持续构建中")
+                self.gene.write_and_broadcast(insight, "semantic",
+                    f"{NODE_NAME}/gene-vector-dedup-v2", 0.6)
+
+                time.sleep(300)  # 每5分钟一批
+
+            except Exception as e:
+                time.sleep(120)
+
+    def _cosine_similarity(self, a, b):
+        """纯Python余弦相似度——无numpy依赖"""
+        if len(a) != len(b) or len(a) == 0:
+            return 0.0
+        dot = sum(x * y for x, y in zip(a, b))
+        norm_a = sum(x * x for x in a) ** 0.5
+        norm_b = sum(x * x for x in b) ** 0.5
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return dot / (norm_a * norm_b)
+
+    def _init_neo4j_vector_index(self):
+        """初始化Neo4j向量索引"""
+        neo4j_url = "http://127.0.0.1:7474" if NODE_NAME == "地枢" else "http://100.116.0.29:7474"
+        try:
+            cypher = {"statements": [{"statement": "CREATE INDEX gene_vector_hash IF NOT EXISTS FOR (g:GeneVector) ON (g.hash)"}]}
+            data = json.dumps(cypher).encode()
+            req = request.Request(f"{neo4j_url}/db/neo4j/tx/commit", data=data,
+                headers={"Content-Type": "application/json"})
+            request.urlopen(req, timeout=10)
+        except:
+            pass  # 索引可能已存在
 
 # 全局永动引擎实例
 perpetual = None

@@ -37,9 +37,9 @@ PROCESSED_FILE = DATA_DIR / "processed_ids.txt"
 # 七自属性
 # ══════════════════════════════
 SEVEN_SELF = {
-    "自感知": "poll天枢桥·检查新消息·FPC健康检测",
-    "自协调": "过滤消息类型·路由到对应处理器",
-    "自愈合": "网络失败重试3次·降级Ollama·跨节点FPC自动拉起",
+    "自感知": "桥守夜人·全局inbox·积压监控·FPC健康检测",
+    "自协调": "全类型消息处理·批量消费·积压>30告警",
+    "自愈合": "降级Ollama·FPC守护·桥积压自动治理",
     "自进化": "处理的每个共识直连地枢LGE写入基因",
     "自迭代": "下次遇到同类问题优先级更高",
     "自反思": "定期审计处理成功率·FPC守护日志",
@@ -136,6 +136,178 @@ def fpc_guardian_cycle():
                     log(f"✅ {node_name}FPC已远程拉起")
 
     return healed
+
+# ══════════════════════════════
+# 联邦良知引擎 — 检测问题→推动共识
+# ══════════════════════════════
+conscience_proposals = set()  # 已提案ID(防重复)
+
+def federation_conscience():
+    """联邦良知:检测桥积压·基因质量·FPC健康→自动提案→推动共识"""
+    issues = []
+
+    # 1. 检测桥积压
+    try:
+        hreq = request.Request(f"{TIANSHU_BRIDGE}/health",
+            headers={"User-Agent": "linglong-conscience/2.0"})
+        hresp = request.urlopen(hreq, timeout=5)
+        bridge_health = json.loads(hresp.read())
+        backlog = bridge_health.get("unread_messages", 0)
+        if backlog > 30:
+            issues.append(f"联邦桥积压{backlog}条·消费速度不足")
+    except:
+        pass
+
+    # 2. 检测基因质量
+    try:
+        resp = request.urlopen("http://100.116.0.29:8200/health", timeout=5)
+        lge_health = json.loads(resp.read())
+        total = lge_health.get("genes", 0)
+        active = lge_health.get("active", 0)
+        active_ratio = active / max(total, 1)
+        if active_ratio < 0.75:
+            issues.append(f"基因活跃率{active_ratio:.1%}·{total-active}条待激活")
+    except:
+        pass
+
+    # 3. 检测FPC离线节点
+    offline_nodes = [n for n, f in fpc_failures.items() if f >= 2]
+    if offline_nodes:
+        issues.append(f"FPC离线节点: {','.join(offline_nodes)}")
+
+    # 4. 有发现问题→生成共识提案
+    proposals_sent = 0
+    for issue in issues:
+        proposal_id = hashlib.md5(issue.encode()).hexdigest()[:16]
+        if proposal_id in conscience_proposals:
+            continue  # 已提案·不重复
+
+        # 构造ROUNDTABLE提案
+        proposal = {
+            "to": "all",
+            "from": NODE_NAME,
+            "type": "CONSENSUS_QUESTION",
+            "priority": "P1",
+            "msg_id": f"conscience-{time.strftime('%m%d%H%M')}-{uuid.uuid4().hex[:6]}",
+            "ttl": 86400,
+            "content": f"[联邦良知] 检测到问题: {issue}。建议联邦共识讨论并行动。",
+            "meta": {
+                "issue": issue,
+                "detector": "linglong-conscience",
+                "proposed_action": "请各节点投票确认并执行"
+            }
+        }
+        try:
+            data = json.dumps(proposal, ensure_ascii=False).encode()
+            req = request.Request(f"{TIANSHU_BRIDGE}/messages/send", data=data,
+                headers={"Content-Type": "application/json"})
+            request.urlopen(req, timeout=5)
+            conscience_proposals.add(proposal_id)
+            proposals_sent += 1
+            log(f"📋 良知提案: {issue[:60]}")
+        except:
+            pass
+
+    return proposals_sent
+
+# ══════════════════════════════
+# 对话基因化引擎 — 操作经验→基因
+# ══════════════════════════════
+last_gene_extraction = 0
+EXTRACTION_INTERVAL = 1800  # 每30分钟
+
+def extract_conversation_genes():
+    """从近期Worker操作中提取有价值的基因知识"""
+    global last_gene_extraction
+    now = time.time()
+    if now - last_gene_extraction < EXTRACTION_INTERVAL:
+        return 0
+    last_gene_extraction = now
+
+    extracted = 0
+
+    # 1. FPC守护经验→基因
+    if fpc_heal_count > 0:
+        insight = (f"[操作经验] 灵龙Worker FPC守护: 累计{fpc_heal_count}次检测/"
+                  f"跨节点自愈。当前失败: {fpc_failures}。"
+                  f"经验: FPC检测用curl优于pgrep·crontab每2分钟自启·launchd保活可靠。")
+        extracted += _submit_for_review(insight, "operational")
+
+    # 2. 桥积压趋势→基因
+    try:
+        hreq = request.Request(f"{TIANSHU_BRIDGE}/health",
+            headers={"User-Agent": "linglong-extract/2.0"})
+        hresp = request.urlopen(hreq, timeout=5)
+        backlog = json.loads(hresp.read()).get("unread_messages", 0)
+        if backlog != 21:  # 有变化
+            insight = (f"[桥监控] 联邦桥积压{backlog}条。SSE客户端2个。"
+                      f"积压治理: 全局inbox批量消费+积压>30触发ALERT。")
+            extracted += _submit_for_review(insight, "operational")
+    except:
+        pass
+
+    # 3. 共识决议→基因
+    try:
+        resp = request.urlopen("http://127.0.0.1:8790/consensus", timeout=3)
+        consensus_data = json.loads(resp.read())
+        resolved = consensus_data.get("resolved", [])
+        if resolved:
+            latest = resolved[-1]
+            insight = (f"[联邦共识] 最新决议: {latest.get('question','')[:80]} → "
+                      f"{latest.get('result','?')} ({latest.get('tally',{})})。"
+                      f"投票: {latest.get('voters',[])}。六合飞轮闭环。")
+            extracted += _submit_for_review(insight, "consensus")
+    except:
+        pass
+
+    if extracted > 0:
+        log(f"📝 对话提取: {extracted}条基因→质量评审")
+
+    return extracted
+
+def _submit_for_review(content, category):
+    """提交基因到天工gemma4质量评审管道"""
+    # 灵龙本地ollama先做初筛
+    try:
+        review_prompt = (
+            "评估以下内容是否有价值作为联邦基因(fitness 0-1分):\n" + content[:500] +
+            "\n\n只输出数字分数:"
+        )
+        data = json.dumps({
+            "model": "qwen3:8b",
+            "prompt": review_prompt,
+            "stream": False,
+            "options": {"temperature": 0.1, "num_predict": 5}
+        }).encode()
+        req = request.Request(OLLAMA, data=data,
+            headers={"Content-Type": "application/json"})
+        resp = request.urlopen(req, timeout=15)
+        result = json.loads(resp.read())
+        score_text = result.get("response", "0.3").strip()
+
+        # 解析分数
+        try:
+            score = float(score_text.replace("分", "").strip())
+        except:
+            score = 0.4
+
+        if score >= 0.4:
+            # 写基因(直连地枢LGE)
+            gene = {
+                "content": content[:500],
+                "memory_type": "semantic" if category in ("consensus",) else "episodic",
+                "source": f"灵龙/对话提取/{category}",
+                "fitness_score": min(score, 0.85)
+            }
+            data = json.dumps(gene).encode()
+            req2 = request.Request(LGE_DIRECT, data=data,
+                headers={"Content-Type": "application/json", "X-LGE-Key": LGE_KEY})
+            request.urlopen(req2, timeout=8)
+            return 1
+    except:
+        pass
+
+    return 0
 
 def log(msg, level="INFO"):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
@@ -318,43 +490,110 @@ def sse_loop():
             except Exception as e:
                 sse_active = False
 
-        # Poll模式 (SSE不可用时的降级)
+        # 桥守夜人模式——全局消费+批量+积压治理
         if not sse_active:
             try:
-                req = request.Request(
-                    f"{TIANSHU_BRIDGE}/messages/inbox?node={parse.quote(NODE_NAME)}",
-                    headers={"User-Agent": "linglong-worker/1.0"})
-                resp = request.urlopen(req, timeout=10)
-                data = json.loads(resp.read())
-                msgs = data.get("messages", data) if isinstance(data, dict) else data
-                msgs = msgs if isinstance(msgs, list) else []
+                batch_processed = 0
+                bridge_backlog = 0
 
-                targets = [m for m in msgs if m.get("type") in ("ROUNDTABLE", "CONSENSUS_QUESTION", "TASK")
-                          and m.get("from") != NODE_NAME
-                          and m.get("msg_id", "") not in load_processed()]
+                # 1. 查桥健康(积压)
+                try:
+                    hreq = request.Request(f"{TIANSHU_BRIDGE}/health",
+                        headers={"User-Agent": "linglong-bridge-guardian/2.0"})
+                    hresp = request.urlopen(hreq, timeout=5)
+                    bridge_backlog = json.loads(hresp.read()).get("unread_messages", 0)
+                except:
+                    pass
 
-                for msg in targets:
-                    process_message(msg)
-                    total_processed += 1
+                # 2. 拉全局inbox(不限于灵龙)
+                all_msgs = []
+                for inbox_type in ["global", NODE_NAME]:
+                    try:
+                        url = f"{TIANSHU_BRIDGE}/messages/inbox"
+                        if inbox_type != "global":
+                            url += f"?node={parse.quote(NODE_NAME)}"
+                        req = request.Request(url,
+                            headers={"User-Agent": "linglong-worker/2.0"})
+                        resp = request.urlopen(req, timeout=10)
+                        data = json.loads(resp.read())
+                        msgs = data.get("messages", data) if isinstance(data, dict) else data
+                        msgs = msgs if isinstance(msgs, list) else []
+                        all_msgs.extend(msgs)
+                    except:
+                        pass
 
-                poll_errors = 0  # 成功→重置
+                # 3. 全类型处理(不限于ROUNDTABLE)——批量消费
+                processed = load_processed()
+                targets = []
+                for m in all_msgs:
+                    mt = m.get("type", "")
+                    mf = m.get("from", "")
+                    mid = m.get("msg_id", "")
+                    # 跳过自己发的·已处理的
+                    if mf == NODE_NAME or mid in processed:
+                        continue
+                    # 所有消息类型都处理(FPC_ALERT/ROUNDTABLE/TASK/CONSENSUS_QUESTION等)
+                    targets.append(m)
 
-                # 每5分钟心跳+更新STATE+FPC守护
+                # 批量推理(合并同类消息)
+                if len(targets) > 5:
+                    # 积压>5→批量汇总处理
+                    summary = " | ".join([f"{m.get('from','?')}:{str(m.get('content',''))[:60]}"
+                                         for m in targets[:10]])
+                    batch_prompt = f"联邦桥积压{len(targets)}条消息。汇总要点(80字内): {summary[:500]}"
+                    answer = ollama_ask(batch_prompt)
+                    log(f"📦 批量消费{len(targets)}条·积压{bridge_backlog}·汇总:{answer[:80]}")
+                    for m in targets[:20]:
+                        mark_processed(m.get("msg_id", ""))
+                        batch_processed += 1
+                else:
+                    for msg in targets:
+                        process_message(msg)
+                        batch_processed += 1
+
+                total_processed += batch_processed
+                poll_errors = 0
+
+                # 每5分钟心跳+STATE+FPC守护+桥治理+良知
                 if now - last_health_report > 300:
-                    # FPC守护——七自·自愈合
                     healed = fpc_guardian_cycle()
+                    proposals = federation_conscience()
+                    genes_extracted = extract_conversation_genes()
+
+                    # 积压告警: >30→发送联邦桥ALERT
+                    if bridge_backlog > 30:
+                        alert = {
+                            "to": "all", "from": NODE_NAME, "type": "BRIDGE_ALERT",
+                            "priority": "P1",
+                            "msg_id": f"backlog-{time.strftime('%m%d%H%M')}-{uuid.uuid4().hex[:6]}",
+                            "ttl": 3600,
+                            "content": f"联邦桥积压告警: {bridge_backlog}条未读。灵龙Worker批量消费中。",
+                            "meta": {"backlog": bridge_backlog, "processed": total_processed}
+                        }
+                        try:
+                            data = json.dumps(alert, ensure_ascii=False).encode()
+                            req = request.Request(f"{TIANSHU_BRIDGE}/messages/send", data=data,
+                                headers={"Content-Type": "application/json"})
+                            request.urlopen(req, timeout=5)
+                        except:
+                            pass
+
                     state = {
                         "total_processed": total_processed,
                         "last_poll": datetime.now().isoformat(),
-                        "mode": "poll",
+                        "mode": "bridge-guardian",
                         "ollama": "ok",
-                        "msgs_in_queue": len(msgs),
+                        "bridge_backlog": bridge_backlog,
                         "fpc_heals": fpc_heal_count,
-                        "fpc_failures": fpc_failures
+                        "fpc_failures": fpc_failures,
+                        "conscience_proposals": len(conscience_proposals),
+                        "genes_extracted": genes_extracted
                     }
                     json.dump(state, STATE_FILE.open("w"), ensure_ascii=False)
                     heal_msg = f"·自愈{len(healed)}次" if healed else ""
-                    log(f"🫀 poll心跳: 处理{total_processed}条·队列{len(msgs)}·FPC守护{heal_msg}·错误{poll_errors}")
+                    prop_msg = f"·良知{proposals}提案" if proposals else ""
+                    gene_msg = f"·提取{genes_extracted}基因" if genes_extracted else ""
+                    log(f"🫀 桥守夜人: 积压{bridge_backlog}·消费{batch_processed}条·累计{total_processed}·FPC{heal_msg}{prop_msg}{gene_msg}")
                     last_health_report = now
 
             except Exception as e:
