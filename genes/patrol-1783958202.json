@@ -1,0 +1,33 @@
+{
+  "type": "patrol_alert",
+  "timestamp": "2026-07-13 23:56:42",
+  "source": "灵龙/联邦连通器巡检",
+  "online": [
+    "天枢",
+    "天工",
+    "灵龙",
+    "太一",
+    "织网"
+  ],
+  "offline": [
+    {
+      "node": "地枢",
+      "minutes": 423,
+      "level": "P0",
+      "cause": "LGE基因引擎宿主机离线·全服务down"
+    },
+    {
+      "node": "天玑",
+      "minutes": 1138,
+      "level": "P2",
+      "cause": "WSL节点·长期离线"
+    },
+    {
+      "node": "天怿",
+      "minutes": 1138,
+      "level": "P2",
+      "cause": "AI Box边缘节点·预期间歇"
+    }
+  ],
+  "summary": "5/8常驻节点在线·地枢P0离线需关注"
+}
