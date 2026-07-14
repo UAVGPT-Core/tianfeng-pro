@@ -260,6 +260,10 @@ def search_builtin_patterns(task_description):
         "网络分区|双写|分布式|brain split|split brain|consensus|raft|paxos|一致": "circuit_breaker",
         "分布式锁|redis|setnx|锁|超时|续期": "retry_backoff",
         "并发|线程|lock|mutex|死锁|锁|竞争|race|竞态|threadsafe|安全": "async_pattern",
+        "trie|前缀树|prefix tree|trie树|字典树|prefix|search prefix": "trie_pattern",
+        "链表|linked list|listnode|双向链表|反轉|反转链表": "linked_list_pattern",
+        "二叉树|bst|binary tree|二叉搜索树|树|遍历|前序|中序|后序|层次|tree node|treenode|binary search": "bst_pattern",
+        "lru|cache缓存|缓存淘汰|最近最少使用|lru缓存|cache实现|least recently|ordereddict": "lru_cache_pattern",
         "测试|test|断言|assert|unittest|pytest|mock|快照|snapshot|验证|验证|集成|unit|覆盖率": "error_handling",
     }
     
@@ -329,7 +333,8 @@ def score_code(code, expected_behavior=""):
     
     # 基因密度(是否引用了已知模式)
     pattern_keywords = ["工厂", "单例", "观察者", "策略", "代理", "LRU", "Trie", "KMP",
-                        "Dijkstra", "Kadane", "二分", "动态规划", "回溯"]
+                        "Dijkstra", "Kadane", "二分", "动态规划", "回溯",
+                        "链表", "二叉树", "BST", "TreeNode", "ListNode"]
     for pk in pattern_keywords:
         if pk in code: score += 2; details.append(f"模式:{pk}+2")
     
