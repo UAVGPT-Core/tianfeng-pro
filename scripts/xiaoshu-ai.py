@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-小枢独立AI服务 v3.4 — LGOX联邦第9节点·金融AI
+小枢独立AI服务 v3.5 — LGOX联邦第9节点·金融AI
 部署: 灵龙 :8779 | launchd保活
 模型: DeepSeek V4 Flash | 证据链: 8769统一查询
-v5.0v3.4: 动态基因数·GCP宪法·FCPF v5.1·WidgetSpec v1.0·金字塔v7.72.83·零硬编码
+v5.0v3.5: 动态基因数·GCP宪法·FCPF v5.1·WidgetSpec v1.0·金字塔v7.82·零硬编码
 """
 import json, os, time, urllib.request, asyncio
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 import uvicorn
 
-app = FastAPI(title="小枢·LGOX联邦金融AI", version="v3.4")
+app = FastAPI(title="小枢·LGOX联邦金融AI", version="v3.5")
 
 
 DEEPSEEK_KEY = os.getenv("DEEPSEEK_API_KEY", "")
@@ -38,8 +38,8 @@ WIDGET_SPEC_STANDARDS = {
 
 # ═══ 活数据·零硬编码 ═══
 PYRAMID_VER = "v7.82"
-FLYWHEEL_COUNT = 17
-_gene_cache = {"count": 718000, "nodes": 11, "ts": time.time()}
+FLYWHEEL_COUNT = 18  # 17飞轮+🛸机巢CAD(第16)+六六记忆+自洁=18 (动态更新见_bg_update_cache)
+_gene_cache = {"count": 718000, "nodes": 10, "flywheels": 18, "ts": time.time()}
 
 # ═══ 后台缓存更新(不阻塞事件循环) ═══
 import threading
@@ -237,7 +237,7 @@ async def chat(request: Request):
         "evidence_count": len(evidence.split("\n")) if evidence else 0,
         "evidence": evidence[:500] if evidence else "",
         "tokens": tokens, "latency_ms": latency,
-        "model": "deepseek-v4-flash", "version": "v3.4",
+        "model": "deepseek-v4-flash", "version": "v3.5",
         "gene_id": gene_id, "quality": quality
     })
 
@@ -267,7 +267,7 @@ async def openai_chat(request: Request):
     return JSONResponse({
         "id":f"chatcmpl-xs-{int(time.time())}","object":"chat.completion","model":"deepseek-v4-flash",
         "choices":[{"index":0,"message":{"role":"assistant","content":answer},"finish_reason":"stop"}],
-        "lgox_meta":{"channel":"小枢","version":"v3.4","gcp_widget_spec":"1.0","widget_spec":['relative-url', 'golden-master', 'dual-domain', 'gene-feedback', 'identity-guard', 'cors-native'],"gene_count":live_gene_wan()}
+        "lgox_meta":{"channel":"小枢","version":"v3.5","gcp_widget_spec":"1.0","widget_spec":['relative-url', 'golden-master', 'dual-domain', 'gene-feedback', 'identity-guard', 'cors-native'],"gene_count":live_gene_wan()}
     })
 
 
@@ -405,7 +405,7 @@ async def health():
     return {
         "status": "ok", "service": "小枢·LGOX联邦第9节点",
         "node": "金融AI助手", "model": "deepseek-v4-flash",
-        "evidence": "LGE基因库(8769)", "version": "v3.4",
+        "evidence": "LGE基因库(8769)", "version": "v3.5",
         "gene_count": gn, "pyramid": PYRAMID_VER,
         "persona_hash": "d556eb5b36e30800acc3",
         "gcp_widget_spec": "1.0", "widget_spec": ['relative-url', 'golden-master', 'dual-domain', 'gene-feedback', 'identity-guard', 'cors-native'],
