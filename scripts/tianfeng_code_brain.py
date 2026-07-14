@@ -51,7 +51,7 @@ CONFIG = {
     "log_file": os.path.expanduser("~/lgox-ops/logs/code-brain.log"),
     "workspace": os.path.expanduser("~/lgox-ops/code-brain-workspace"),
     "max_parallel_models": 3,
-    "default_timeout": 180,
+    "default_timeout": 45,  # 2026-07-14: reduced from 180→60→45 — must stay under 120s cron limit
     "deliberation_rounds": 3,  # 多模型辩论轮数
 }
 
@@ -141,31 +141,40 @@ def call_ollama_local(model, prompt, system="", temp=0.3, max_tokens=2048):
 
 
 def call_ollama_dgx(model, prompt, system="", temp=0.3, max_tokens=2048):
-    """通过SSH调用天工Ollama"""
+    """通过SSH调用天工Ollama — fail-fast (15s) + local fallback"""
     payload = {"model": model, "prompt": prompt, "stream": False,
                "options": {"temperature": temp, "num_predict": max_tokens}}
     if system:
         payload["system"] = system
+    
+    # 灵龙本地可用coder: qwen3:8b (通用) / deepseek-r1:7b (推理)
+    local_fallback = "qwen3:8b"
+    
     try:
-        # SSH端口转发
+        # SSH端口转发 — 15s max for the entire attempt
         proc = subprocess.Popen(
             ["ssh", "-o", "ConnectTimeout=3", "-o", "StrictHostKeyChecking=no",
              "-L", "11435:localhost:11434", "-N", "dgx1"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        time.sleep(1.5)
+        time.sleep(1.0)
         import urllib.request
         data = json.dumps(payload).encode()
         req = urllib.request.Request("http://localhost:11435/api/generate",
             data=data, headers={"Content-Type": "application/json"})
-        r = urllib.request.urlopen(req, timeout=CONFIG["default_timeout"])
+        r = urllib.request.urlopen(req, timeout=15)  # fail-fast
         return json.loads(r.read()).get("response", "")
     except:
-        # 降级：SSH执行curl
-        esc = json.dumps(payload).replace("'", "'\\''")
-        cmd = f"curl -s http://localhost:11434/api/generate -d '{esc}'"
-        r = subprocess.run(["ssh", "-o", "ConnectTimeout=5", "dgx1", cmd],
-            capture_output=True, text=True, timeout=CONFIG["default_timeout"])
-        return json.loads(r.stdout).get("response", "")
+        # 降级1：SSH执行curl (5s connect + 15s exec)
+        try:
+            esc = json.dumps(payload).replace("'", "'\\''")
+            cmd = f"curl -s http://localhost:11434/api/generate -d '{esc}'"
+            r = subprocess.run(["ssh", "-o", "ConnectTimeout=3", "dgx1", cmd],
+                capture_output=True, text=True, timeout=18)
+            return json.loads(r.stdout).get("response", "")
+        except:
+            # 降级2：灵龙本地Ollama fallback (qwen3:8b)
+            log(f"  🔄 DGX1 unreachable, falling back to local {local_fallback}", "WARN")
+            return call_ollama_local(local_fallback, prompt, system, temp, max_tokens)
     finally:
         try:
             proc.kill()
