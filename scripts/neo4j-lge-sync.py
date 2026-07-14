@@ -62,6 +62,10 @@ if "Up" not in status:
     status2 = ssh("docker ps --filter name=neo4j --format '{{.Status}}'", timeout=10).strip()
     print(f"[0] After restart: {status2[:80]}")
 
+# ── 0.5. Warmup query (prevents first-query empty-return bug) ──
+_warmup = cypher("RETURN 1 AS test", timeout=20)
+print(f"[0.5] Warmup: {len(_warmup)} chars")
+
 # ── 1. All 13 Cypher queries ──
 queries = {
     "total_nodes":    "MATCH (n) RETURN count(n) AS total_nodes",
@@ -79,9 +83,20 @@ queries = {
     "federation_edges":"MATCH (a)-[f:FEDERATED_WITH]->(b) RETURN a.name AS from_node, b.name AS to_node",
 }
 
+# Critical queries (retry on empty)
+CRITICAL = {"total_nodes", "gene_count", "labels"}
+
 results = {}
 for key, q in queries.items():
     results[key] = cypher(q)
+    # Retry critical queries if empty (up to 2 retries)
+    if key in CRITICAL:
+        for attempt in range(2):
+            if results[key] and len(results[key]) > 5:
+                break
+            print(f"[1] {key}: empty, retry {attempt+1}...")
+            time.sleep(3)
+            results[key] = cypher(q)
     print(f"[1] {key}: {len(results[key])} chars")
 
 # ── 2. LGE health ──

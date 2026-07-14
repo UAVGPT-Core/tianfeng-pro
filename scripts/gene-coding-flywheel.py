@@ -25,16 +25,73 @@ try:
     from gene_injection_engine import BUILTIN_PATTERNS
     _HAS_BUILTIN = True
 except ImportError:
-    # 可能是连字符问题，尝试直接导入
     try:
         import importlib
-        # 创建符号链接别名
         if not (HOME / "lgox-ops/scripts/gene_injection_engine.py").exists():
             os.system(f"ln -sf {HOME}/lgox-ops/scripts/gene-injection-engine.py {HOME}/lgox-ops/scripts/gene_injection_engine.py")
         from gene_injection_engine import BUILTIN_PATTERNS
         _HAS_BUILTIN = True
     except:
+        BUILTIN_PATTERNS = {}
         _HAS_BUILTIN = False
+
+# 扩展BUILTIN_PATTERNS: 算法模式（gene-coding-flywheel专用）
+ALGORITHM_PATTERNS = {
+    "two_pointer_pattern": [
+        "# PATTERN: 双指针算法 (GENE-SEM-567ac54412f3bc58 接雨水)",
+        "def two_pointer(height):",
+        "    left, right = 0, len(height) - 1",
+        "    left_max = right_max = 0",
+        "    water = 0",
+        "    while left <= right:",
+        "        if height[left] < height[right]:",
+        "            left_max = max(left_max, height[left])",
+        "            water += left_max - height[left]",
+        "            left += 1",
+        "        else:",
+        "            right_max = max(right_max, height[right])",
+        "            water += right_max - height[right]",
+        "            right -= 1",
+        "    return water",
+    ],
+    "dp_pattern": [
+        "# PATTERN: 动态规划五步法 (GENE-SEM-48c7915be8f4896e)",
+        "# 1) dp[i]: 以i结尾的最优值",
+        "# 2) dp[i] = max(nums[i], dp[i-1] + nums[i])",
+        "# 3) dp[0] = nums[0]",
+        "# 4) 遍历顺序: 1..n-1",
+        "# 5) 举例验证: [-2,1,-3,4] → dp=[-2,1,-2,4], ans=4",
+    ],
+    "lru_cache_pattern": [
+        "# PATTERN: LRU缓存 (GENE-SEM-b4c77ea27c5c78cc)",
+        "from collections import OrderedDict",
+        "class LRUCache:",
+        "    def __init__(self, capacity: int):",
+        "        self.cache = OrderedDict()",
+        "        self.cap = capacity",
+        "    def get(self, key: int) -> int:",
+        "        if key not in self.cache: return -1",
+        "        self.cache.move_to_end(key)",
+        "        return self.cache[key]",
+        "    def put(self, key: int, value: int) -> None:",
+        "        self.cache[key] = value",
+        "        self.cache.move_to_end(key)",
+        "        if len(self.cache) > self.cap:",
+        "            self.cache.popitem(last=False)",
+    ],
+    "binary_search_pattern": [
+        "# PATTERN: 二分查找模板 (GENE-SEM-4815231711e126aa)",
+        "def binary_search(nums, target):",
+        "    left, right = 0, len(nums) - 1",
+        "    while left <= right:",
+        "        mid = left + (right - left) // 2",
+        "        if nums[mid] == target: return mid",
+        "        elif nums[mid] < target: left = mid + 1",
+        "        else: right = mid - 1",
+        "    return -1",
+    ],
+}
+BUILTIN_PATTERNS.update(ALGORITHM_PATTERNS)
 
 # LGE基因库集群（三级降级: 地枢主库→天枢LGE→灵龙LGA本地）
 LGE_POOL = [
@@ -265,6 +322,10 @@ def search_builtin_patterns(task_description):
         "二叉树|bst|binary tree|二叉搜索树|树|遍历|前序|中序|后序|层次|tree node|treenode|binary search": "bst_pattern",
         "lru|cache缓存|缓存淘汰|最近最少使用|lru缓存|cache实现|least recently|ordereddict": "lru_cache_pattern",
         "测试|test|断言|assert|unittest|pytest|mock|快照|snapshot|验证|验证|集成|unit|覆盖率": "error_handling",
+        "接雨水|trapping rain|双指针|two pointer|two-pointer|相向|快慢指针|滑动窗口|左右指针": "two_pointer_pattern",
+        "动态规划|dp|递推|状态转移|最优子结构|背包|fibonacci|斐波那契|LCS|LIS|子序列": "dp_pattern",
+        "lru缓存|lru|最近最少使用|cache淘汰|ordereddict|淘汰策略|least recently": "lru_cache_pattern",
+        "二分查找|binary search|二分法|二分搜索|二分答案|对数时间|log n": "binary_search_pattern",
     }
     
     for pattern, pattern_name in keyword_map.items():
