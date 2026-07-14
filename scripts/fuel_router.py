@@ -11,10 +11,12 @@ def _key(prefix):
     return ''
 GLM_K = 'fd867a96bad64f53a8ece13ac6911887.T3zYiYf7KbxhVTb0'  # 智谱200万token/天免费
 DS_K = _key('DEEPSEEK_API')
+NV_K = _key('NVIDIA_API')  # NVIDIA Inception免费额度·121模型
 TIANGONG = 'http://100.118.207.31:11434'
+NV_URL = 'https://integrate.api.nvidia.com/v1'
 
 def fuel_chat(prompt, max_tokens=None, temperature=None):
-    # Tier0: 天工GPU零成本(新·2026-07-13成本优化)
+    # Tier0: 天工GPU零成本
     try:
         body = json.dumps({'model':'qwen2.5:14b','messages':[{'role':'user','content':prompt}],
             'stream':False,'options':{'temperature':temperature or 0.3,'num_predict':max_tokens or 256}}).encode()
@@ -25,7 +27,21 @@ def fuel_chat(prompt, max_tokens=None, temperature=None):
                 'tokens':d.get('eval_count',0),'tier':'T0零成本'}
     except: pass
 
-    # Tier1: 智谱GLM免费(Key过期暂时跳过)
+    # Tier1: NVIDIA NGC免费·121模型·Inception会员
+    if NV_K:
+        try:
+            body = json.dumps({'model':'nvidia/llama-3.1-nemotron-nano-8b-v1',
+                'messages':[{'role':'user','content':prompt}],
+                'max_tokens':max_tokens or 256,'temperature':temperature or 0.3}).encode()
+            req = urllib.request.Request(f'{NV_URL}/chat/completions',data=body,
+                headers={'Authorization':f'Bearer {NV_K}','Content-Type':'application/json'})
+            d = json.loads(urllib.request.urlopen(req,timeout=15).read())
+            return {'answer':d['choices'][0]['message']['content'].strip(),
+                    'model':'nemotron-nano@NGC免费','tokens':d['usage']['total_tokens'],
+                    'tier':'T1 NGC零成本'}
+        except: pass
+
+    # Tier2: 智谱GLM-4-Flash免费
     if GLM_K:
         try:
             body = json.dumps({'model':'glm-4-flash','messages':[{'role':'user','content':prompt}],
