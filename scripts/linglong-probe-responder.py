@@ -5,7 +5,7 @@ from datetime import datetime
 
 INBOX = os.path.expanduser("~/lgox-ops/inbox")
 NODE = "灵龙"
-SCP_DEST = "a1@100.100.89.2:/Users/a1/lgox-ops/inbox/"
+SCP_DEST = "a1@100.100.89.2:/Users/a1/lgox-ops/inbox/from-linglong/"
 
 def reply_probe(fpath, content):
     """解析探针并写回执"""
@@ -14,6 +14,11 @@ def reply_probe(fpath, content):
         if line.startswith("MID:"):
             mid = line.replace("MID:", "").strip()
             break
+    # 六合通格式: 六合通圆桌提案|ts|天枢探针{mid}
+    if not mid:
+        m = re.search(r"六合通圆桌提案(?:\(URGENT\))?\|\d{8}-\d{6}\|天枢探针(.+)$", content, re.MULTILINE)
+        if m:
+            mid = m.group(1)
     
     now = datetime.now().strftime("%Y%m%d-%H%M%S")
     reply_content = f"探针回执|{now}|灵龙已收·TO: {fpath}"
