@@ -86,8 +86,8 @@ for key, q in queries.items():
 
 # ── 2. LGE health ──
 lge_raw = ssh(
-    'curl -s -H "X-LGE-Key: fbe0b015eb7a03727903b660c4cecc60" http://127.0.0.1:8200/health',
-    timeout=10
+    'curl -sf --max-time 10 http://127.0.0.1:8200/health',
+    timeout=15
 ).strip()
 print(f"[2] LGE health: {len(lge_raw)} chars")
 
