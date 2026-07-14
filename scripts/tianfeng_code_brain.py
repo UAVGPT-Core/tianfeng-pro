@@ -57,10 +57,10 @@ CONFIG = {
 
 # === 模型矩阵 (2035) ===
 MODELS = {
-    "architect":    {"name": "gemma4:latest",      "host": "dgx1", "role": "架构师",   "cost": "free"},
+    "architect":    {"name": "qwen2.5:14b",         "host": "dgx1", "role": "架构师",   "cost": "free"},  # loaded in VRAM
     "critic":       {"name": "deepseek-r1:7b",     "host": "local","role": "批评者",   "cost": "free"},
     "synthesizer":  {"name": "qwen3:8b",           "host": "local","role": "综合者",   "cost": "free"},
-    "coder":        {"name": "qwen2.5-coder:7b",   "host": "dgx1", "role": "代码生成", "cost": "free"},
+    "coder":        {"name": "qwen2.5:14b",         "host": "dgx1", "role": "代码生成", "cost": "free"},  # loaded in VRAM
     "reviewer":     {"name": "qwen2.5:14b",        "host": "dgx1", "role": "代码审查", "cost": "free"},
     "ds_flash":     {"name": "deepseek-v4-flash",  "host": "cloud","role": "中复杂度",  "cost": "cheap"},
     "ds_pro":       {"name": "deepseek-v4-pro",    "host": "cloud","role": "复杂任务",  "cost": "expensive"},
@@ -140,52 +140,23 @@ def call_ollama_local(model, prompt, system="", temp=0.3, max_tokens=2048):
     return json.loads(r.read()).get("response", "")
 
 
-def call_ollama_dgx(model, prompt, system="", temp=0.3, max_tokens=2048):
-    """通过SSH调用天工Ollama — fail-fast (15s) + local fallback"""
+def call_ollama_dgx(model, prompt, system="", temp=0.3, max_tokens=1024):
+    """通过SSH调用天工Ollama — SSH+curl直连 (skip fragile tunnel)"""
     payload = {"model": model, "prompt": prompt, "stream": False,
                "options": {"temperature": temp, "num_predict": max_tokens}}
     if system:
         payload["system"] = system
-    
-    # 灵龙本地可用coder: qwen3:8b (通用) / deepseek-r1:7b (推理)
-    local_fallback = "qwen3:8b"
-    
-    try:
-        # SSH端口转发 — 15s max for the entire attempt
-        proc = subprocess.Popen(
-            ["ssh", "-o", "ConnectTimeout=3", "-o", "StrictHostKeyChecking=no",
-             "-o", "IdentitiesOnly=yes",
-             "-L", "11435:localhost:11434", "-N", "dgx1"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        time.sleep(1.0)
-        import urllib.request
-        data = json.dumps(payload).encode()
-        req = urllib.request.Request("http://127.0.0.1:11435/api/generate",
-            data=data, headers={"Content-Type": "application/json"})
-        r = urllib.request.urlopen(req, timeout=12)  # fail-fast: 12s for code gen
-        return json.loads(r.read()).get("response", "")
-    except:
-        # 降级1：SSH执行curl (3s connect + 13s exec)
-        try:
-            esc = json.dumps(payload).replace("'", "'\\''")
-            cmd = f"curl -s --max-time 13 http://localhost:11434/api/generate -d '{esc}'"
-            r = subprocess.run(["ssh", "-o", "ConnectTimeout=3", "-o", "IdentitiesOnly=yes",
-                "dgx1", cmd],
-                capture_output=True, text=True, timeout=16)
-            return json.loads(r.stdout).get("response", "")
-        except:
-            # 降级2：本地Ollama太慢(>20s on Mac mini)，跳过以保持在120s cron内
-            log(f"  ⚠️ DGX1+local both failed — skipping round", "WARN")
-            raise RuntimeError("All code-gen backends timed out")
-    finally:
-        try:
-            proc.kill()
-            proc.wait()
-        except:
-            pass
+
+    esc = json.dumps(payload).replace("'", "'\\''")
+    cmd = f"curl -s --max-time 35 http://localhost:11434/api/generate -d '{esc}'"
+    r = subprocess.run(
+        ["ssh", "-o", "ConnectTimeout=3", "-o", "IdentitiesOnly=yes",
+         "-o", "StrictHostKeyChecking=no", "dgx1", cmd],
+        capture_output=True, text=True, timeout=38)
+    return json.loads(r.stdout).get("response", "")
 
 
-def call_model(role_key, prompt, system="", temp=0.3, max_tokens=2048):
+def call_model(role_key, prompt, system="", temp=0.3, max_tokens=1024):
     """统一模型调用入口·自动路由"""
     m = MODELS.get(role_key, MODELS["synthesizer"])
     host = m["host"]
@@ -487,13 +458,13 @@ def generate_code(task, language="python"):
 {gene_hints}
 输出纯代码，用```{language}包裹。"""
 
-    # 尝试天工coder，降级本地r1
+    # 尝试天工coder (single model — avoid redundant fallback w/ same 14B)
     code_text = None
     model_used = None
-    for mkey in ["coder", "architect"]:
+    for mkey in ["coder"]:  # single-attempt: coder→architect both use qwen2.5:14b
         try:
             resp = call_model(mkey, task, system, temp=0.2)
-            if resp and len(resp) > 20:
+            if resp and len(resp) > 20 and "ERROR" not in resp and "failed" not in resp:
                 code_text = resp
                 model_used = mkey
                 break

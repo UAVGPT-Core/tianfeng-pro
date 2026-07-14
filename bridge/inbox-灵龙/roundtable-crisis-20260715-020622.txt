@@ -1,0 +1,9 @@
+六合通圆桌提案 20260715-020622
+PID: watchdog-cron-20260715-020622
+FROM: 天枢
+TO: 灵龙
+TYPE: roundtable-ping
+ACTION: ping-ack
+REQUIRED: 5分钟内回复 to-天枢-*.txt
+STATUS: CRISIS - 此前提案均未回复
+LAST_RECEIPT: 20260715-012118 (44分钟前)
