@@ -566,4 +566,7 @@ if __name__ == "__main__":
             print(f"    节点分布: {len(status['nodes'])} 节点")
 
     else:
-        ap.print_help()
+        # Default: cron mode with JSON output (no-arg → don't print_help silently)
+        result = federal_gene_broadcast_cycle()
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        seed_lge_with_gpc_genes()
