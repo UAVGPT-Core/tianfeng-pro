@@ -141,18 +141,18 @@ def call_ollama_local(model, prompt, system="", temp=0.3, max_tokens=2048):
 
 
 def call_ollama_dgx(model, prompt, system="", temp=0.3, max_tokens=1024):
-    """通过SSH调用天工Ollama — SSH+curl直连 (skip fragile tunnel)"""
+    """通过SSH调用天工Ollama — stdin管道 (avoid shell escaping issues)"""
     payload = {"model": model, "prompt": prompt, "stream": False,
                "options": {"temperature": temp, "num_predict": max_tokens}}
     if system:
         payload["system"] = system
 
-    esc = json.dumps(payload).replace("'", "'\\''")
-    cmd = f"curl -s --max-time 35 http://localhost:11434/api/generate -d '{esc}'"
     r = subprocess.run(
         ["ssh", "-o", "ConnectTimeout=3", "-o", "IdentitiesOnly=yes",
-         "-o", "StrictHostKeyChecking=no", "dgx1", cmd],
-        capture_output=True, text=True, timeout=38)
+         "-o", "StrictHostKeyChecking=no", "dgx1",
+         "curl -s --max-time 50 -d @- http://localhost:11434/api/generate"],
+        input=json.dumps(payload),
+        capture_output=True, text=True, timeout=55)
     return json.loads(r.stdout).get("response", "")
 
 
@@ -448,22 +448,20 @@ def generate_code(task, language="python"):
     """L3代码生成 — 使用L1+L2上下文的增强版"""
     log("🏗️ L3 CODE-GEN")
 
-    # 搜基因
-    genes = search_genes(f"{task} {language} code implementation", n=8)
+    # 搜基因 (简化版 — 减少prompt长度加速响应)
+    genes = search_genes(f"{task} {language}", n=3)
     gene_hints = ""
     if genes:
-        gene_hints = "参考基因:\n" + "\n".join([f"  - {g.get('content','')[:120]}" for g in genes[:4]])
+        gene_hints = " | ".join([g.get('content','')[:60] for g in genes[:2]])
 
-    system = f"""你是世界级{language}程序员。代码必须: 可运行·类型注解·注释·边界处理。
-{gene_hints}
-输出纯代码，用```{language}包裹。"""
+    system = f"你是{language}程序员。输出可运行代码，用```{language}包裹。{gene_hints}"
 
     # 尝试天工coder (single model — avoid redundant fallback w/ same 14B)
     code_text = None
     model_used = None
     for mkey in ["coder"]:  # single-attempt: coder→architect both use qwen2.5:14b
         try:
-            resp = call_model(mkey, task, system, temp=0.2)
+            resp = call_model(mkey, task, system, temp=0.2, max_tokens=512)
             if resp and len(resp) > 20 and "ERROR" not in resp and "failed" not in resp:
                 code_text = resp
                 model_used = mkey
