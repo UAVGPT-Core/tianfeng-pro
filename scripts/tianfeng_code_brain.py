@@ -51,7 +51,7 @@ CONFIG = {
     "log_file": os.path.expanduser("~/lgox-ops/logs/code-brain.log"),
     "workspace": os.path.expanduser("~/lgox-ops/code-brain-workspace"),
     "max_parallel_models": 3,
-    "default_timeout": 30,  # 2026-07-14: from 180→30s — local Ollama 10-20s; must stay under 120s cron
+    "default_timeout": 20,  # 2026-07-15: from 30→20s — local Ollama must stay under 120s cron w/ 2 rounds
     "deliberation_rounds": 3,  # 多模型辩论轮数
 }
 
@@ -154,27 +154,29 @@ def call_ollama_dgx(model, prompt, system="", temp=0.3, max_tokens=2048):
         # SSH端口转发 — 15s max for the entire attempt
         proc = subprocess.Popen(
             ["ssh", "-o", "ConnectTimeout=3", "-o", "StrictHostKeyChecking=no",
+             "-o", "IdentitiesOnly=yes",
              "-L", "11435:localhost:11434", "-N", "dgx1"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         time.sleep(1.0)
         import urllib.request
         data = json.dumps(payload).encode()
-        req = urllib.request.Request("http://localhost:11435/api/generate",
+        req = urllib.request.Request("http://127.0.0.1:11435/api/generate",
             data=data, headers={"Content-Type": "application/json"})
-        r = urllib.request.urlopen(req, timeout=15)  # fail-fast
+        r = urllib.request.urlopen(req, timeout=12)  # fail-fast: 12s for code gen
         return json.loads(r.read()).get("response", "")
     except:
-        # 降级1：SSH执行curl (5s connect + 15s exec)
+        # 降级1：SSH执行curl (3s connect + 13s exec)
         try:
             esc = json.dumps(payload).replace("'", "'\\''")
-            cmd = f"curl -s http://localhost:11434/api/generate -d '{esc}'"
-            r = subprocess.run(["ssh", "-o", "ConnectTimeout=3", "dgx1", cmd],
-                capture_output=True, text=True, timeout=18)
+            cmd = f"curl -s --max-time 13 http://localhost:11434/api/generate -d '{esc}'"
+            r = subprocess.run(["ssh", "-o", "ConnectTimeout=3", "-o", "IdentitiesOnly=yes",
+                "dgx1", cmd],
+                capture_output=True, text=True, timeout=16)
             return json.loads(r.stdout).get("response", "")
         except:
-            # 降级2：灵龙本地Ollama fallback (qwen3:8b)
-            log(f"  🔄 DGX1 unreachable, falling back to local {local_fallback}", "WARN")
-            return call_ollama_local(local_fallback, prompt, system, temp, max_tokens)
+            # 降级2：本地Ollama太慢(>20s on Mac mini)，跳过以保持在120s cron内
+            log(f"  ⚠️ DGX1+local both failed — skipping round", "WARN")
+            raise RuntimeError("All code-gen backends timed out")
     finally:
         try:
             proc.kill()
@@ -660,8 +662,25 @@ def select_challenges(rounds=5):
     return selected
 
 
+def check_dgx1(timeout=8):
+    """Pre-flight DGX1 health check — fast, non-blocking."""
+    try:
+        r = subprocess.run(
+            ["ssh", "-o", "ConnectTimeout=3", "-o", "StrictHostKeyChecking=no",
+             "dgx1", "curl -s --max-time 5 http://localhost:11434/api/tags"],
+            capture_output=True, text=True, timeout=timeout)
+        return r.returncode == 0 and "models" in r.stdout
+    except:
+        return False
+
+
 def self_play(rounds=5):
     """自适应自我对弈 — L5层 Phase 3版"""
+    # Pre-flight: skip if DGX1 is unreachable (avoids 120s cron timeout)
+    if not check_dgx1():
+        log("  ⚠️ DGX1 unreachable — skipping self-play (will retry next cron)", "WARN")
+        return {"skipped": True, "reason": "dgx1_unreachable",
+                "rounds": 0, "avg_score": 0, "pass_rate": "0/0"}
     log(f"🎮 SELF-PLAY V3: {rounds} rounds (自适应)")
 
     challenges = select_challenges(rounds)
