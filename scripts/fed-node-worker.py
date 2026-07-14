@@ -175,7 +175,45 @@ def execute_task(task):
         log("  🎯 圆桌回执已发(实况)")
         return result
 
-# ── 普通命令执行 ──
+# ── v2.5: TYPE:天锋PRO / TSF 任务处理 ──
+    tsf_trigger = (ttype in ("tsf", "tianfeng", "天锋PRO") or 
+                   "TYPE:tsf" in (content or "") or "TYPE:天锋" in (content or "") or
+                   "天锋PRO" in (content or "") or "tianfeng" in (content or "").lower())
+    if tsf_trigger:
+        try:
+            tsf_cmd = action or ""
+            if not tsf_cmd and content:
+                # Extract the actual command/task from content
+                lines = content.split("\n")
+                for line in lines:
+                    stripped = line.strip()
+                    if stripped and not stripped.startswith("TYPE:") and not stripped.startswith("#"):
+                        tsf_cmd = stripped
+                        break
+            if tsf_cmd:
+                proc = subprocess.run(tsf_cmd, shell=True, capture_output=True,
+                                    text=True, timeout=120, cwd=OPS_DIR)
+                result["status"] = "tsf_completed" if proc.returncode == 0 else "tsf_failed"
+                result["output"] = (proc.stdout + proc.stderr)[:1000]
+                result["exit_code"] = proc.returncode
+                log(f"  🚀 TSF: {tsf_cmd[:60]} → exit={proc.returncode}")
+            else:
+                result["status"] = "tsf_skipped"
+                result["output"] = "no_action_for_tsf"
+                log(f"  ⏭️ TSF跳过: 无有效action")
+            return result
+        except subprocess.TimeoutExpired:
+            result["status"] = "tsf_timeout"
+            result["error"] = "120s timeout"
+            log(f"  ❌ TSF超时")
+            return result
+        except Exception as e:
+            result["status"] = "tsf_error"
+            result["error"] = str(e)[:200]
+            log(f"  ❌ TSF异常: {e}")
+            return result
+
+    # ── 普通命令执行 ──
     if not action:
         result["status"] = "skipped"
         result["output"] = "no_action"
@@ -230,8 +268,8 @@ def startup_register():
     log("🚀 开机自启·能力注册...")
     capabilities = {
         "node": NODE,
-        "version": "v2.0",
-        "capabilities": ["shell_exec", "gene_write", "heartbeat", "self_heal"],
+        "version": "v2.5",
+        "capabilities": ["shell_exec", "gene_write", "tsf_dispatch", "heartbeat", "self_heal"],
         "gene_proxy": GENE_PROXY,
         "bridge": BRIDGE,
         "timestamp": datetime.datetime.now().isoformat(timespec="seconds"),
