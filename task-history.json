@@ -1,17 +1,5 @@
 [
   {
-    "task_id": "6c8ead0e",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "3ea95d17",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
     "task_id": "2226be00",
     "status": "skipped",
     "output": "no_action",
@@ -2999,6 +2987,18 @@
   },
   {
     "task_id": "a4956d0d",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "f3acdc00",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "8ea79efc",
     "status": "skipped",
     "output": "no_action",
     "error": ""
