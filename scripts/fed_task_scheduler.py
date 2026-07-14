@@ -55,9 +55,9 @@ COMPUTE_BACKENDS = [
         "ollama": "http://localhost:11434",
         "gpu": "M4",
         "models": {
-            "qwen2.5:7b":  {"size": "4GB", "max_tokens": 512, "priority": 5},
+            "qwen2.5-coder:7b":  {"size": "4GB", "max_tokens": 512, "priority": 5},
         },
-        "default_model": "qwen2.5:7b"
+        "default_model": "qwen2.5-coder:7b"
     }
 ]
 
