@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-07-14 07:56",
+  "type": "node_offline",
+  "node": "地枢",
+  "duration_hours": 15.1,
+  "status": "SSH/LGE/Ollama all unreachable",
+  "other_nodes_online": [
+    "天枢",
+    "天工",
+    "灵龙",
+    "太一",
+    "天玑",
+    "织网"
+  ]
+}

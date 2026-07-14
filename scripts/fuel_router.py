@@ -9,7 +9,8 @@ def _key(prefix):
             for line in open(f):
                 if prefix in line: return line.split('=',1)[1].strip().strip('"').strip("'")
     return ''
-GLM_K = _key('ZHIPU_API'); DS_K = _key('DEEPSEEK_API')
+GLM_K = 'fd867a96bad64f53a8ece13ac6911887.T3zYiYf7KbxhVTb0'  # 智谱200万token/天免费
+DS_K = _key('DEEPSEEK_API')
 TIANGONG = 'http://100.118.207.31:11434'
 
 def fuel_chat(prompt, max_tokens=None, temperature=None):
