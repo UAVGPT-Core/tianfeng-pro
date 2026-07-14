@@ -291,14 +291,16 @@ async def chat(request: Request):
         }, status_code=503)
     latency = int((time.time() - t0) * 1000)
     
-    # v3.4 自进化: 长回答自动纳基因
+    # v3.5 自进化: 高质回答自动纳基因(≥150字·有证据·非闲聊)
     gene_id = ""
-    if len(answer) > 80 and evidence and "抱歉" not in answer[:50]:
+    if len(answer) > 150 and evidence and "抱歉" not in answer[:50] and "基因库中未检索到" not in answer[:50]:
         try:
+            # 质量自评: 长度+证据+身份=基础分
+            base_score = min(0.65, 0.45 + len(answer)/1000 + len(evidence)/5000)
             gene_payload = json.dumps({
-                "content": f"[自进化·小枢] Q:{question[:80]} → A:{answer[:120]}",
+                "content": f"[自进化·小枢] Q:{question[:80]} → A:{answer[:200]}",
                 "memory_type": "semantic", "source": "小枢自进化",
-                "fitness": 0.6
+                "fitness": base_score
             }).encode()
             def _write_gene():
                 req = urllib.request.Request("http://100.116.0.29:8200/genes/write",

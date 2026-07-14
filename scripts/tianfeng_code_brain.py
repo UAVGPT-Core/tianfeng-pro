@@ -45,7 +45,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # === 配置 ===
 CONFIG = {
     "lge_url": "http://100.116.0.29:8200",
-    "lge_timeout": 3,  # fail-fast: gene writes are non-critical for selfplay
+    "lge_fallback_url": "http://127.0.0.1:8210",  # local mirror when DGX2 is offline
+    "lge_timeout": 5,  # fail-fast on DGX2; local mirror needs 4+s
     "gene_db": os.path.expanduser("~/lgox-ops/data/code-brain.db"),
     "log_file": os.path.expanduser("~/lgox-ops/logs/code-brain.log"),
     "workspace": os.path.expanduser("~/lgox-ops/code-brain-workspace"),
@@ -78,34 +79,49 @@ def log(msg, level="INFO"):
 # ========== LGE 基因引擎接口 ==========
 
 def search_genes(query, n=10):
-    """搜索LGE基因库"""
-    try:
-        import urllib.request
-        data = json.dumps({"query": query, "n_results": n}).encode()
-        req = urllib.request.Request(f"{CONFIG['lge_url']}/genes/search",
-            data=data, headers={"Content-Type": "application/json"})
-        r = urllib.request.urlopen(req, timeout=CONFIG["lge_timeout"])
-        return json.loads(r.read()).get("genes", json.loads(r.read()).get("results", []))
-    except:
-        return []
+    """搜索LGE基因库，主库失败时自动降级到本地镜像"""
+    import urllib.request
+    
+    urls = [CONFIG['lge_url'], CONFIG.get('lge_fallback_url', '')]
+    urls = [u for u in urls if u]
+    
+    for url in urls:
+        try:
+            data = json.dumps({"query": query, "n_results": n}).encode()
+            req = urllib.request.Request(f"{url}/genes/search",
+                data=data, headers={"Content-Type": "application/json"})
+            r = urllib.request.urlopen(req, timeout=CONFIG["lge_timeout"])
+            result = json.loads(r.read())
+            return result.get("genes", result.get("results", []))
+        except:
+            continue
+    return []
 
 
 def write_gene(content, gene_type="semantic"):
-    """写入基因到LGE"""
-    try:
-        import urllib.request
-        data = json.dumps({"content": content, "memory_type": gene_type,
-                          "source": "tianfeng-code-brain-v2"}).encode()
-        req = urllib.request.Request(f"{CONFIG['lge_url']}/genes/write",
-            data=data, headers={"Content-Type": "application/json"})
-        r = urllib.request.urlopen(req, timeout=CONFIG["lge_timeout"])
-        result = json.loads(r.read())
-        gid = result.get("id", "?")
-        log(f"  🧬 gene:{gid} {content[:50]}...")
-        return gid
-    except Exception as e:
-        log(f"  ⚠️ gene write failed: {e}", "WARN")
-        return None
+    """写入基因到LGE，主库失败时自动降级到本地镜像"""
+    import urllib.request
+    
+    urls = [CONFIG['lge_url'], CONFIG.get('lge_fallback_url', '')]
+    urls = [u for u in urls if u]  # filter empty
+    
+    for url in urls:
+        try:
+            data = json.dumps({"content": content, "memory_type": gene_type,
+                              "source": "tianfeng-code-brain-v2"}).encode()
+            req = urllib.request.Request(f"{url}/genes/write",
+                data=data, headers={"Content-Type": "application/json"})
+            r = urllib.request.urlopen(req, timeout=CONFIG["lge_timeout"])
+            result = json.loads(r.read())
+            gid = result.get("id", "?")
+            via = "local" if "127.0.0.1" in url else "dgx2"
+            log(f"  🧬 gene:{gid} [{via}] {content[:50]}...")
+            return gid
+        except Exception as e:
+            if url == urls[-1]:
+                log(f"  ⚠️ gene write failed (all URLs): {e}", "WARN")
+            # else: silently try fallback
+    return None
 
 
 # ========== 模型调用 ==========

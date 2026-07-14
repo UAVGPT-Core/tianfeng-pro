@@ -341,14 +341,15 @@ async def chat(request: Request):
         answer = "我是天巡，LGOX联邦第10节点·企业AI哨兵·技术顾问。" + answer
         identity_ok = False
     
-    # v3.6 自进化: 长回答自动纳基因
+    # v3.6 自进化: 高质回答自动纳基因(≥150字·有证据·非闲聊)
     gene_id = ""
-    if len(answer) > 80 and evidence and "抱歉" not in answer[:50]:
+    if len(answer) > 150 and evidence and "抱歉" not in answer[:50] and "基因库中未检索到" not in answer[:50]:
         try:
+            base_score = min(0.65, 0.45 + len(answer)/1000 + len(evidence)/5000)
             gene_payload = json.dumps({
-                "content": f"[自进化·天巡] Q:{question[:80]} → A:{answer[:120]}",
+                "content": f"[自进化·天巡] Q:{question[:80]} → A:{answer[:200]}",
                 "memory_type": "semantic", "source": "天巡自进化",
-                "fitness": 0.6
+                "fitness": base_score
             }).encode()
             def _write_gene():
                 req = urllib.request.Request("http://100.116.0.29:8200/genes/write",
