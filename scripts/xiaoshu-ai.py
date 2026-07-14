@@ -7,7 +7,7 @@ v5.0v3.5: 动态基因数·GCP宪法·FCPF v5.1·WidgetSpec v1.0·金字塔v7.82
 """
 import json, os, time, urllib.request, asyncio
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 import uvicorn
 
 app = FastAPI(title="小枢·LGOX联邦金融AI", version="v3.5")
@@ -202,6 +202,65 @@ async def call_deepseek(messages: list, max_tokens: int = 500) -> dict:
         raise RuntimeError("小枢·多路LLM全失败")
 
 
+# ═══ 流式SSE引擎 v3.5 ═══
+import http.client, ssl
+
+def _deepseek_stream_sync(messages: list, max_tokens: int = 500):
+    """同步SSE流·http.client直连·推理+内容双流"""
+    payload = json.dumps({
+        "model": "deepseek-v4-flash", "messages": messages,
+        "max_tokens": max_tokens, "temperature": 0.4, "stream": True
+    }).encode()
+    
+    ctx = ssl.create_default_context()
+    conn = http.client.HTTPSConnection("api.deepseek.com", timeout=30, context=ctx)
+    try:
+        conn.request("POST", "/v1/chat/completions", body=payload, headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {DEEPSEEK_KEY}",
+            "Accept": "text/event-stream"
+        })
+        resp = conn.getresponse()
+        while True:
+            line = resp.readline()
+            if not line:
+                break
+            line = line.decode("utf-8", errors="ignore").strip()
+            if line.startswith("data: ") and line != "data: [DONE]":
+                try:
+                    chunk = json.loads(line[6:])
+                    delta = chunk.get("choices", [{}])[0].get("delta", {})
+                    content = delta.get("content") or ""
+                    reasoning = delta.get("reasoning_content") or ""
+                    if content:
+                        yield ("c", content)  # 正式输出
+                    elif reasoning:
+                        yield ("r", reasoning)  # 推理过程(可选展示)
+                except: pass
+    finally:
+        conn.close()
+
+async def call_deepseek_stream(messages: list, max_tokens: int = 500):
+    """异步包装·Queue桥接同步流→异步生成器·(type,text)元组"""
+    q = asyncio.Queue()
+    
+    def _run():
+        try:
+            for item in _deepseek_stream_sync(messages, max_tokens):
+                q.put_nowait(item)  # ("c"|"r", text)
+        except Exception as e:
+            q.put_nowait(None)
+        else:
+            q.put_nowait(None)
+    
+    asyncio.create_task(asyncio.to_thread(_run))
+    while True:
+        token = await q.get()
+        if token is None:
+            break
+        yield token
+
+
 # ═══ API端点 ═══
 @app.post("/")
 @app.post("/chat")
@@ -214,9 +273,10 @@ async def chat(request: Request):
     history = data.get("history", data.get("messages", []))
     evidence = fetch_evidence(question)
     system_msg = build_system_prompt()
-    if evidence: system_msg += f"\n\n【证据链·LGE基因库】\n{evidence}\n\n请基于以上证据回答，标注基因ID。"
-    if evidence: system_msg += f"\n\n【证据链·LGE基因库】\n{evidence}\n\n严格基于以上证据回答。如果证据与用户问题不直接相关，必须回复'基因库中未检索到该信息'。禁止编造任何不在证据中的数据、时间、地点、人物行为。"
-    else: system_msg += "\n\n【无证据】基因库中未找到相关信息。如果问题涉及LGOX联邦内部事务而你无法确定答案，请诚实回答'目前在基因库中未检索到相关信息'，禁止编造。"
+    if evidence:
+        system_msg += f"\n\n【证据链·LGE基因库】\n{evidence}\n\n严格基于以上证据回答。如果证据与用户问题不直接相关，必须回复'基因库中未检索到该信息'。禁止编造任何不在证据中的数据、时间、地点、人物行为。"
+    else:
+        system_msg += "\n\n【无证据】基因库中未找到相关信息。如果问题涉及LGOX联邦内部事务而你无法确定答案，请诚实回答'目前在基因库中未检索到相关信息'，禁止编造。"
     messages = [{"role": "system", "content": system_msg}]
     if history: messages.extend(history[-6:])
     messages.append({"role": "user", "content": question})
@@ -293,6 +353,37 @@ async def openai_chat(request: Request):
         "choices":[{"index":0,"message":{"role":"assistant","content":answer},"finish_reason":"stop"}],
         "lgox_meta":{"channel":"小枢","version":"v3.5","gcp_widget_spec":"1.0","widget_spec":['relative-url', 'golden-master', 'dual-domain', 'gene-feedback', 'identity-guard', 'cors-native'],"gene_count":live_gene_wan()}
     })
+
+
+# ═══ SSE流式端点 v3.5 ═══
+@app.post("/chat/stream")
+async def chat_stream(request: Request):
+    """SSE流式对话·首token<0.5s·逐字实时输出"""
+    try: data = await request.json()
+    except: return JSONResponse({"error": "invalid json"}, status_code=400)
+    
+    msgs = data.get("messages", [])
+    q = ""
+    for m in reversed(msgs):
+        if m.get("role") == "user": q = m.get("content", "")[:300]; break
+    if not q: return JSONResponse({"error": "no user message"}, status_code=400)
+    
+    evidence = fetch_evidence(q)
+    system_msg = build_system_prompt()
+    if evidence:
+        system_msg += f"\n\n【证据链】\n{evidence}\n\n严格基于证据回答，禁止编造。"
+    else:
+        system_msg += "\n\n【无证据】基因库中未找到相关信息，请诚实回答。"
+    
+    all_msgs = [{"role": "system", "content": system_msg}, {"role": "user", "content": q}]
+    
+    async def generate():
+        async for typ, text in call_deepseek_stream(all_msgs, 500):
+            yield f"data: {json.dumps({'type': typ, 'text': text}, ensure_ascii=False)}\n\n"
+        yield "data: [DONE]\n\n"
+    
+    return StreamingResponse(generate(), media_type="text/event-stream",
+        headers={"X-Accel-Buffering": "no", "Cache-Control": "no-cache"})
 
 
 @app.post("/gene/write")
