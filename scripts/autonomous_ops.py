@@ -34,7 +34,7 @@ TARGETS = {
         "type": "ssh"
     },
     "本地·基因通道": {
-        "health": "http://100.100.89.2:8790/health",
+        "health": "http://100.100.89.2:8792/health",
         "type": "internal"
     },
     "本地·LGE引擎": {
