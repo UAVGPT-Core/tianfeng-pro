@@ -30,7 +30,7 @@ from urllib import request, parse
 # ══════════════════════════════
 LGE_URL = "http://100.116.0.29:8200"
 BRIDGE_URL = "http://127.0.0.1:8765"   # 本地优先（灵龙自身bridge）
-FALLBACK_BRIDGE = "http://100.100.89.2:8765"  # 天枢bridge（降级）
+FALLBACK_BRIDGE = "http://100.116.0.29:8765"  # 地枢备桥（降级·天枢防火墙阻断HTTP直连）
 LGA_URL = "http://127.0.0.1:8202"
 LGE_KEY = "fbe0b015eb7a03727903b660c4cecc60"
 DATA_DIR = Path.home() / "lgox-ops/data/seeds"
@@ -131,22 +131,29 @@ def build_seed_package():
         }
         package["total_genes"] += len(gene_ids)
 
-    # 注入能力图谱 — 本地桥优先，天枢降级
+    # 注入能力图谱 — 本地桥优先（带重试），地枢降级
+    _cap_done = False
     for bridge_url in [BRIDGE_URL, FALLBACK_BRIDGE]:
-        try:
-            req = request.Request(f"{bridge_url}/federation/nodes")
-            resp = request.urlopen(req, timeout=3)
-            nodes = json.loads(resp.read())
-            if isinstance(nodes, dict):
-                nodes = nodes.get("nodes", nodes)
-            package["capability_graph"] = {
-                "node_count": len(nodes) if isinstance(nodes, (list, dict)) else 0,
-                "snapshot": str(nodes)[:3000],
-                "bridge_source": bridge_url
-            }
+        for attempt in range(1, 3):
+            try:
+                req = request.Request(f"{bridge_url}/federation/nodes")
+                resp = request.urlopen(req, timeout=3)
+                nodes = json.loads(resp.read())
+                if isinstance(nodes, dict):
+                    nodes = nodes.get("nodes", nodes)
+                package["capability_graph"] = {
+                    "node_count": len(nodes) if isinstance(nodes, (list, dict)) else 0,
+                    "snapshot": str(nodes)[:3000],
+                    "bridge_source": bridge_url
+                }
+                _cap_done = True
+                break
+            except:
+                if attempt < 2 and bridge_url == BRIDGE_URL:
+                    time.sleep(1.5)
+                    continue
+        if _cap_done:
             break
-        except:
-            continue
     else:
         package["capability_graph"] = {"error": "bridge unreachable"}
 
@@ -209,23 +216,30 @@ def auto_onboard(force=False):
     except:
         state = {"injected": {}, "last_scan": None}
 
-    # 扫描联邦桥节点列表 — 本地优先
+    # 扫描联邦桥节点列表 — 本地优先（带重试，抗瞬态SQLite I/O超时）
     nodes = None
+    MAX_RETRIES = 3
     for bridge_url in [BRIDGE_URL, FALLBACK_BRIDGE]:
-        try:
-            req = request.Request(f"{bridge_url}/federation/nodes")
-            resp = request.urlopen(req, timeout=5)
-            data = json.loads(resp.read())
-            nodes = data.get("nodes", data)
-            if isinstance(nodes, dict):
-                nodes = nodes
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                req = request.Request(f"{bridge_url}/federation/nodes")
+                resp = request.urlopen(req, timeout=5)
+                data = json.loads(resp.read())
+                nodes = data.get("nodes", data)
+                if isinstance(nodes, dict):
+                    nodes = nodes
+                break
+            except Exception as e:
+                if attempt < MAX_RETRIES and bridge_url == BRIDGE_URL:
+                    time.sleep(2)  # 本地桥瞬态I/O，等待后重试
+                    continue
+                print(f"⚠️ {bridge_url} 不可达: {e}")
+                break
+        if nodes is not None:
             break
-        except Exception as e:
-            print(f"⚠️ {bridge_url} 不可达: {e}")
-            continue
     
     if nodes is None:
-        print("❌ 联邦桥不可达（本地及天枢均失败）")
+        print("❌ 联邦桥不可达（本地及地枢备桥均失败）")
         return
 
     # 发现未注入节点
