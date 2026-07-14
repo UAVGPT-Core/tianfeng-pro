@@ -57,11 +57,11 @@ CONFIG = {
 
 # === 模型矩阵 (2035) ===
 MODELS = {
-    "architect":    {"name": "qwen2.5:14b",         "host": "dgx1", "role": "架构师",   "cost": "free"},  # loaded in VRAM
+    "architect":    {"name": "gemma4:qat-q4",        "host": "dgx1", "role": "架构师",   "cost": "free"},  # 7GB vs 14b 9GB
     "critic":       {"name": "deepseek-r1:7b",     "host": "local","role": "批评者",   "cost": "free"},
     "synthesizer":  {"name": "qwen3:8b",           "host": "local","role": "综合者",   "cost": "free"},
-    "coder":        {"name": "qwen2.5:14b",         "host": "dgx1", "role": "代码生成", "cost": "free"},  # loaded in VRAM
-    "reviewer":     {"name": "qwen2.5:14b",        "host": "dgx1", "role": "代码审查", "cost": "free"},
+    "coder":        {"name": "qwen2.5-coder:7b",    "host": "dgx1", "role": "代码生成", "cost": "free"},  # 4.7GB code-specialized
+    "reviewer":     {"name": "gemma4:qat-q4",       "host": "dgx1", "role": "代码审查", "cost": "free"},
     "ds_flash":     {"name": "deepseek-v4-flash",  "host": "cloud","role": "中复杂度",  "cost": "cheap"},
     "ds_pro":       {"name": "deepseek-v4-pro",    "host": "cloud","role": "复杂任务",  "cost": "expensive"},
 }
@@ -141,23 +141,86 @@ def call_ollama_local(model, prompt, system="", temp=0.3, max_tokens=2048):
 
 
 def call_ollama_dgx(model, prompt, system="", temp=0.3, max_tokens=1024):
-    """通过SSH调用天工Ollama — stdin管道 (avoid shell escaping issues)"""
+    """通过SSH调用天工Ollama — 带重试+keep_alive·防空响应"""
     payload = {"model": model, "prompt": prompt, "stream": False,
-               "options": {"temperature": temp, "num_predict": max_tokens}}
+               "options": {"temperature": temp, "num_predict": max_tokens},
+               "keep_alive": -1}  # 永久驻留内存，避免冷启动
     if system:
         payload["system"] = system
 
-    r = subprocess.run(
-        ["ssh", "-o", "ConnectTimeout=3", "-o", "IdentitiesOnly=yes",
-         "-o", "StrictHostKeyChecking=no", "dgx1",
-         "curl -s --max-time 50 -d @- http://localhost:11434/api/generate"],
-        input=json.dumps(payload),
-        capture_output=True, text=True, timeout=55)
-    return json.loads(r.stdout).get("response", "")
+    import time
+    max_retries = 2
+    for attempt in range(max_retries + 1):
+        try:
+            r = subprocess.run(
+                ["ssh", "-o", "ConnectTimeout=3", "-o", "IdentitiesOnly=yes",
+                 "-o", "StrictHostKeyChecking=no", "dgx1",
+                 "curl -s --max-time 50 -d @- http://localhost:11434/api/generate"],
+                input=json.dumps(payload),
+                capture_output=True, text=True, timeout=55)
+            
+            if not r.stdout or not r.stdout.strip():
+                if attempt < max_retries:
+                    delay = (attempt + 1) * 2  # 2s, 4s
+                    log(f"  ⚠️ DGX1 empty response (attempt {attempt+1}), retry in {delay}s...", "WARN")
+                    time.sleep(delay)
+                    continue
+                raise ValueError("DGX1 returned empty response after all retries")
+            
+            result = json.loads(r.stdout)
+            return result.get("response", "")
+            
+        except subprocess.TimeoutExpired:
+            if attempt < max_retries:
+                log(f"  ⚠️ DGX1 SSH timeout (attempt {attempt+1}), retry...", "WARN")
+                time.sleep(3)
+                continue
+            raise
+        except json.JSONDecodeError:
+            if attempt < max_retries:
+                log(f"  ⚠️ DGX1 non-JSON response (attempt {attempt+1}), retry...", "WARN")
+                time.sleep(2)
+                continue
+            raise
+
+    return ""  # unreachable
+
+
+def call_ds_flash(prompt, system="", temp=0.3, max_tokens=1024):
+    """DS Flash云端fallback — 仅当DGX1完全不可用时"""
+    import urllib.request
+    api_key = os.environ.get("DEEPSEEK_API_KEY", "")
+    if not api_key:
+        raise ValueError("DEEPSEEK_API_KEY not set")
+    
+    messages = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    messages.append({"role": "user", "content": prompt[:4000]})
+    
+    payload = json.dumps({
+        "model": "deepseek-chat",  # V4 Flash
+        "messages": messages,
+        "temperature": temp,
+        "max_tokens": min(max_tokens, 4096),
+        "stream": False
+    }).encode()
+    
+    req = urllib.request.Request(
+        "https://api.deepseek.com/v1/chat/completions",
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+    )
+    r = urllib.request.urlopen(req, timeout=30)
+    result = json.loads(r.read())
+    return result["choices"][0]["message"]["content"]
 
 
 def call_model(role_key, prompt, system="", temp=0.3, max_tokens=1024):
-    """统一模型调用入口·自动路由"""
+    """统一模型调用入口·自动路由·DGX1失败时fallback到DS Flash"""
     m = MODELS.get(role_key, MODELS["synthesizer"])
     host = m["host"]
     model = m["name"]
@@ -166,11 +229,23 @@ def call_model(role_key, prompt, system="", temp=0.3, max_tokens=1024):
         if host == "local":
             return call_ollama_local(model, prompt, system, temp, max_tokens)
         elif host == "dgx1":
-            return call_ollama_dgx(model, prompt, system, temp, max_tokens)
+            result = call_ollama_dgx(model, prompt, system, temp, max_tokens)
+            if not result or result.startswith("["):
+                raise ValueError(f"DGX1 returned invalid: {result[:80]}")
+            return result
+        elif host == "cloud":
+            return call_ds_flash(prompt, system, temp, max_tokens)
         else:
             return f"[{role_key}: cloud models not implemented yet]"
     except Exception as e:
-        log(f"  ❌ {role_key} failed: {e}", "ERROR")
+        log(f"  ❌ {role_key}({model}@{host}) failed: {e}", "ERROR")
+        # Fallback: for coder/architect, try DS Flash cloud
+        if role_key in ("coder", "architect", "reviewer") and host == "dgx1":
+            log(f"  🔄 falling back to DS Flash (cloud)...", "WARN")
+            try:
+                return call_ds_flash(prompt, system, temp, max_tokens)
+            except Exception as e2:
+                log(f"  ❌ fallback also failed: {e2}", "ERROR")
         return f"[{role_key} ERROR: {e}]"
 
 
