@@ -51,7 +51,7 @@ CONFIG = {
     "log_file": os.path.expanduser("~/lgox-ops/logs/code-brain.log"),
     "workspace": os.path.expanduser("~/lgox-ops/code-brain-workspace"),
     "max_parallel_models": 3,
-    "default_timeout": 45,  # 2026-07-14: reduced from 180→60→45 — must stay under 120s cron limit
+    "default_timeout": 30,  # 2026-07-14: from 180→30s — local Ollama 10-20s; must stay under 120s cron
     "deliberation_rounds": 3,  # 多模型辩论轮数
 }
 
