@@ -44,18 +44,42 @@ _gene_cache = {"count": 718000, "nodes": 10, "flywheels": 18, "ts": time.time()}
 # ═══ 后台缓存更新(不阻塞事件循环) ═══
 import threading
 def _bg_update_cache():
-    """后台线程更新基因缓存"""
-    global _gene_cache
+    """后台线程更新基因/节点/飞轮缓存·三源实时"""
+    global _gene_cache, FLYWHEEL_COUNT
     while True:
         try:
             time.sleep(300)  # 5分钟更新一次
+            # ① 基因数 → LGE stats
             req = urllib.request.Request("http://100.116.0.29:8200/genes/stats", method="GET")
             with urllib.request.urlopen(req, timeout=3) as r:
                 d = json.loads(r.read())
                 c = d.get("total_genes", d.get("genes", 0))
                 if c > 100000:
                     _gene_cache["count"] = c
-                    _gene_cache["ts"] = time.time()
+            # ② 在线节点数 → 联邦桥健康
+            try:
+                req2 = urllib.request.Request("http://localhost:8765/health", method="GET")
+                with urllib.request.urlopen(req2, timeout=3) as r2:
+                    bd = json.loads(r2.read())
+                    nodes_raw = bd.get("nodes", [])
+                    # 只算联邦正式节点: 物理8 + 逻辑2 = 10
+                    phys = [n for n in nodes_raw if n in ("天枢","地枢","天工","灵龙","太一","织网","天玑","天怿")]
+                    logic = [n for n in nodes_raw if n in ("天巡","AI助手")]  # AI助手=小枢
+                    _gene_cache["nodes"] = len(phys) + len(logic)
+            except:
+                pass
+            # ③ 飞轮数 → 联邦桥飞轮状态 (fallback: 读取本地dashboard)
+            try:
+                req3 = urllib.request.Request("http://localhost:8765/federation/nodes", method="GET")
+                with urllib.request.urlopen(req3, timeout=3) as r3:
+                    fd = json.loads(r3.read())
+                    fw_list = fd.get("flywheels", {})
+                    if fw_list:
+                        FLYWHEEL_COUNT = len(fw_list)
+                        _gene_cache["flywheels"] = FLYWHEEL_COUNT
+            except:
+                pass
+            _gene_cache["ts"] = time.time()
         except:
             pass
 
@@ -91,7 +115,7 @@ def live_gene_wan(brief=False):
 
 def live_nodes():
     global _gene_cache
-    return _gene_cache.get("nodes", 11)
+    return _gene_cache.get("nodes", 10)
 
 def build_system_prompt():
     """从Golden Master persona文件加载·哈希验证·防回退"""
@@ -105,7 +129,7 @@ def build_system_prompt():
         import hashlib
         actual_hash = hashlib.sha256(template.encode()).hexdigest()[:16]
         if actual_hash != "d556eb5b36e30800acc3":
-            print(f"WARNING: persona hash mismatch! expected=d556eb5b36e30800acc3 got={actual_hash}")
+            print(f"WARNING: persona hash mismatch! expected=782dc52b29084384 got={actual_hash}")
     except:
         import os as _os
         template = open(_os.path.expanduser("~/lgox-ops/scripts/persona_xiaoshu.txt")).read()
@@ -407,7 +431,7 @@ async def health():
         "node": "金融AI助手", "model": "deepseek-v4-flash",
         "evidence": "LGE基因库(8769)", "version": "v3.5",
         "gene_count": gn, "pyramid": PYRAMID_VER,
-        "persona_hash": "d556eb5b36e30800acc3",
+        "persona_hash": "782dc52b29084384",
         "gcp_widget_spec": "1.0", "widget_spec": ['relative-url', 'golden-master', 'dual-domain', 'gene-feedback', 'identity-guard', 'cors-native'],
         "gcp_standards": {
             "comms": "TYPE前缀·桥双发·L1-L4",

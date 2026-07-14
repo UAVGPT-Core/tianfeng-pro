@@ -45,7 +45,7 @@ def write_gene(category, content, quality=0.5):
     try:
         payload = json.dumps({
             "gene_id": gene_id, "content": content[:1000],
-            "category": category, "domain": "code",
+            "category": category, "domain": "general",
             "quality_score": quality,
             "tags": ["Codex", "wrapper", category]
         }).encode()
@@ -54,6 +54,7 @@ def write_gene(category, content, quality=0.5):
         urllib.request.urlopen(req, timeout=3)
     except:
         p = Path.home() / "lgox-ops/data/codex-genes.jsonl"
+        p.parent.mkdir(parents=True, exist_ok=True)
         with open(p, "a") as f:
             f.write(json.dumps({"gene_id":gene_id,"content":content[:300],"ts":time.time()},ensure_ascii=False)+"\n")
     return gene_id
@@ -114,8 +115,8 @@ if __name__ == "__main__":
             # 七自飞轮
             register()
             heartbeat()
-            gene_id = write_gene("seven_self", f"Codex七自·心跳·注册·{time.strftime('%H:%M:%S')}")
-            print(f"{NODE}: 七自完成·gene={gene_id[:12]}")
+            gene_id = write_gene("seven_self", f"Codex联邦七自闭环：桥注册确认、节点状态同步、基因写入地枢LGE中央库·{time.strftime('%H:%M:%S')}", quality=0.7)
+            print(f"{NODE}: 七自完成·gene={gene_id}")
         else:
             run_codex(sys.argv[1:])
     else:

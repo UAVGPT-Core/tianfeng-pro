@@ -73,39 +73,6 @@
     "desc": "联邦桥连通性检查",
     "target": "AI助手",
     "id": "bd8edbb470cc",
-    "created": "2026-07-13T21:10:00",
-    "status": "dispatched"
-  },
-  {
-    "node": "*",
-    "type": "universal",
-    "priority": 5,
-    "action": "python3 ~/lgox-ops/scripts/node-digest-engine.py --once --node AI助手 --bridge http://100.100.89.2:8765 2>/dev/null; echo 'DIGESTED'",
-    "desc": "执行知识消化",
-    "target": "AI助手",
-    "id": "ad179dd6f6c6",
-    "created": "2026-07-13T21:10:00",
-    "status": "dispatched"
-  },
-  {
-    "node": "*",
-    "type": "universal",
-    "priority": 8,
-    "action": "python3 ~/lgox-ops/scripts/node-capability.py --register 2>/dev/null; echo 'REPORTED'",
-    "desc": "上报节点能力",
-    "target": "AI助手",
-    "id": "48133869184e",
-    "created": "2026-07-13T21:10:00",
-    "status": "dispatched"
-  },
-  {
-    "node": "*",
-    "type": "universal",
-    "priority": 4,
-    "action": "curl -s http://100.100.89.2:8765/health 2>/dev/null || echo 'BRIDGE_UNREACHABLE'",
-    "desc": "联邦桥连通性检查",
-    "target": "AI助手",
-    "id": "bd8edbb470cc",
     "created": "2026-07-13T21:35:00",
     "status": "dispatched"
   },
@@ -2406,6 +2373,39 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-14T21:00:01",
+    "status": "dispatched"
+  },
+  {
+    "node": "*",
+    "type": "universal",
+    "priority": 4,
+    "action": "curl -s http://100.100.89.2:8765/health 2>/dev/null || echo 'BRIDGE_UNREACHABLE'",
+    "desc": "联邦桥连通性检查",
+    "target": "AI助手",
+    "id": "bd8edbb470cc",
+    "created": "2026-07-14T21:25:01",
+    "status": "dispatched"
+  },
+  {
+    "node": "*",
+    "type": "universal",
+    "priority": 5,
+    "action": "python3 ~/lgox-ops/scripts/node-digest-engine.py --once --node AI助手 --bridge http://100.100.89.2:8765 2>/dev/null; echo 'DIGESTED'",
+    "desc": "执行知识消化",
+    "target": "AI助手",
+    "id": "ad179dd6f6c6",
+    "created": "2026-07-14T21:25:01",
+    "status": "dispatched"
+  },
+  {
+    "node": "*",
+    "type": "universal",
+    "priority": 8,
+    "action": "python3 ~/lgox-ops/scripts/node-capability.py --register 2>/dev/null; echo 'REPORTED'",
+    "desc": "上报节点能力",
+    "target": "AI助手",
+    "id": "48133869184e",
+    "created": "2026-07-14T21:25:01",
     "status": "dispatched"
   }
 ]

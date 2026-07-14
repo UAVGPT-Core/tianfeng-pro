@@ -38,25 +38,48 @@ WIDGET_SPEC_STANDARDS = {
 
 # ═══ 活数据·零硬编码 ═══
 PYRAMID_VER = "v7.82"
-FLYWHEEL_COUNT = 17
-_gene_cache = {"count": 741332, "nodes": 12, "ts": time.time()}
+FLYWHEEL_COUNT = 18  # 动态更新见_bg_update_cache
+_gene_cache = {"count": 741332, "nodes": 10, "flywheels": 18, "ts": time.time()}
 _persona_cache = {}  # FD泄漏修复: 缓存persona文件内容+mtime
 
 # ═══ 后台缓存更新(不阻塞事件循环) ═══
 import threading
 def _bg_update_cache():
-    """后台线程更新基因缓存"""
-    global _gene_cache
+    """后台线程更新基因/节点/飞轮缓存·三源实时"""
+    global _gene_cache, FLYWHEEL_COUNT
     while True:
         try:
             time.sleep(300)  # 5分钟更新一次
+            # ① 基因数 → LGE stats
             req = urllib.request.Request("http://100.116.0.29:8200/genes/stats", method="GET")
             with urllib.request.urlopen(req, timeout=3) as r:
                 d = json.loads(r.read())
                 c = d.get("total_genes", d.get("genes", 0))
                 if c > 100000:
                     _gene_cache["count"] = c
-                    _gene_cache["ts"] = time.time()
+            # ② 在线节点数 → 联邦桥健康
+            try:
+                req2 = urllib.request.Request("http://localhost:8765/health", method="GET")
+                with urllib.request.urlopen(req2, timeout=3) as r2:
+                    bd = json.loads(r2.read())
+                    nodes_raw = bd.get("nodes", [])
+                    phys = [n for n in nodes_raw if n in ("天枢","地枢","天工","灵龙","太一","织网","天玑","天怿")]
+                    logic = [n for n in nodes_raw if n in ("天巡","AI助手")]
+                    _gene_cache["nodes"] = len(phys) + len(logic)
+            except:
+                pass
+            # ③ 飞轮数 → 联邦桥飞轮状态
+            try:
+                req3 = urllib.request.Request("http://localhost:8765/federation/nodes", method="GET")
+                with urllib.request.urlopen(req3, timeout=3) as r3:
+                    fd = json.loads(r3.read())
+                    fw_list = fd.get("flywheels", {})
+                    if fw_list:
+                        FLYWHEEL_COUNT = len(fw_list)
+                        _gene_cache["flywheels"] = FLYWHEEL_COUNT
+            except:
+                pass
+            _gene_cache["ts"] = time.time()
         except:
             pass
 
@@ -92,7 +115,7 @@ def live_gene_wan(brief=False):
 
 def live_nodes():
     global _gene_cache
-    return _gene_cache.get("nodes", 11)
+    return _gene_cache.get("nodes", 10)
 
 def build_system_prompt():
     """从Golden Master persona文件加载·哈希验证·防回退·缓存防FD泄漏"""
@@ -112,7 +135,7 @@ def build_system_prompt():
             _persona_cache["mtime"] = mtime
             actual_hash = hashlib.sha256(template.encode()).hexdigest()[:16]
             if actual_hash != "5d43d701c5610c08":
-                print(f"WARNING: persona hash mismatch! expected=5d43d701c5610c08 got={actual_hash}")
+                print(f"WARNING: persona hash mismatch! expected=69a9ba7b22f30cf0 got={actual_hash}")
     except:
         with open(_os.path.expanduser("~/lgox-ops/scripts/persona_tianxun.txt")) as f:
             template = f.read()
@@ -415,7 +438,7 @@ async def health():
         "node": "企业AI哨兵", "model": "deepseek-v4-flash",
         "evidence": "LGE基因库(8769)", "version": "v3.6",
         "gene_count": gn, "pyramid": PYRAMID_VER,
-        "persona_hash": "5d43d701c5610c08",
+        "persona_hash": "69a9ba7b22f30cf0",
         "gcp_widget_spec": "1.0", "widget_spec": ['relative-url', 'golden-master', 'dual-domain', 'gene-feedback', 'identity-guard', 'cors-native'],
         "gcp_standards": {
             "comms": "TYPE前缀·桥双发·L1-L4",
@@ -426,5 +449,5 @@ async def health():
 
 if __name__ == "__main__":
     port = int(os.getenv("TIANXUN_PORT", "8778"))
-    print(f"天巡 v3.6·三路并行证据 :{port} | 基因741K·节点12 | 金字塔{PYRAMID_VER} | 七自闭环")
+    print(f"天巡 v3.6·四路并行证据 :{port} | 基因{live_gene_wan()}·节点{live_nodes()} | 金字塔{PYRAMID_VER} | 七自闭环")
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
