@@ -1,23 +1,5 @@
 [
   {
-    "task_id": "40797445",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "3644c0a8",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "b749605f",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
     "task_id": "9942e068",
     "status": "skipped",
     "output": "no_action",
@@ -3018,5 +3000,23 @@
     "output": "/bin/sh: {type:: command not found\n",
     "error": "",
     "exit_code": 127
+  },
+  {
+    "task_id": "500b4de5",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "1e46a915",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "776c6930",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
   }
 ]
