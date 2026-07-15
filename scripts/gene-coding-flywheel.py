@@ -854,8 +854,8 @@ def run_flywheel():
     # ① 感知: 检索基因（LGE三级降级 + 内置模式fallback）
     genes = extract_coding_genes(task_desc)
     
-    # 如果LGE全离线，fallback到内置模式库
-    if not genes and _HAS_BUILTIN:
+    # 如果LGE全离线，fallback到内置模式库（BUILTIN_PATTERNS总是可用·即使import失败也由本地补充）
+    if not genes and BUILTIN_PATTERNS:
         builtin_genes = search_builtin_patterns(task_desc)
         if builtin_genes:
             print(f"  [OK] LGE全离线·使用内置模式fallback → {len(builtin_genes)}条", file=sys.stderr)
