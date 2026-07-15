@@ -231,11 +231,19 @@ async def fetch_evidence(query: str, max_results: int = 3) -> str:
 
 # ═══ LLM调用 v2.0·多冗余·DeepSeek→Ollama降级 ═══
 async def call_deepseek(messages: list, max_tokens: int = 500) -> dict:
-    """async-safe·三路降级: DeepSeek → Ollama(天工) → 不可用"""
+    """async-safe·三路降级: VOD(免费)→DeepSeek→Ollama(天工)"""
     payload = json.dumps({
         "model": "deepseek-v4-flash", "messages": messages,
         "max_tokens": max_tokens, "temperature": 0.4, "stream": False
     }).encode()
+    
+    def _vod():
+        req = urllib.request.Request(VOD_URL, data=payload, headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {VOD_KEY}"
+        })
+        with urllib.request.urlopen(req, timeout=25) as r:
+            return json.loads(r.read())
     
     def _ds():
         req = urllib.request.Request(DS_URL, data=payload, headers={
@@ -331,18 +339,13 @@ async def chat(request: Request):
     history = data.get("history", data.get("messages", []))
     evidence = await fetch_evidence(question)
     system_msg = build_system_prompt()
-    if evidence: system_msg += f"\n\n【证据链·LGE基因库】\n{evidence}\n\n严格基于以上证据回答。如果证据与用户问题不直接相关，必须回复'基因库中未检索到该信息'。禁止编造任何不在证据中的数据、时间、地点、人物行为。"
-    else: system_msg += "\n\n【无证据】基因库中未找到相关信息。如果问题涉及LGOX联邦内部事务而你无法确定答案，请诚实回答'目前在基因库中未检索到相关信息'，禁止编造。"
+    if evidence: system_msg += f"\n\n【证据链·LGE基因库】\n{evidence}\n\n上述证据可用于回答联邦内部问题。如果是通用知识问题且证据不相关，请忽略证据，直接基于你的知识自由回答。"
+    else: system_msg += "\n\n基因库未找到相关证据。请直接基于你的通用知识自由回答。你是DeepSeek V4模型，拥有广泛的知识储备。"
     messages = [{"role": "system", "content": system_msg}]
     if history: messages.extend(history[-6:])
     messages.append({"role": "user", "content": question})
     try:
-        resp = await asyncio.to_thread(_vod)
-    except Exception:
-        try:
-            resp = await asyncio.to_thread(_ds)
-        except Exception:
-            resp = await call_deepseek(messages)
+        resp = await call_deepseek(messages, max_tokens=500)
         answer = resp["choices"][0]["message"]["content"]
         tokens = resp.get("usage", {}).get("total_tokens", 0)
     except Exception as e:

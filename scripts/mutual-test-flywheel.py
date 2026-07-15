@@ -263,7 +263,7 @@ else:
     winner = "小枢" if avg_x > avg_t else ("天巡" if avg_t > avg_x else "平局")
     print(f"  一致性:{consistency} · 胜者:{winner}")
     
-    conn.execute("INSERT INTO cross_validations VALUES(?,?,?,?,?,?,?)",
+    conn.execute("INSERT INTO cross_validations(ts,question,xiaoshu_answer,tianxun_answer,xiaoshu_score,tianxun_score,consistency) VALUES(?,?,?,?,?,?,?)",
         (now.isoformat(), q, a_x[:500], a_t[:500], avg_x, avg_t, consistency))
     conn.commit()
     
