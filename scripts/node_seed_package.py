@@ -134,7 +134,7 @@ def build_seed_package():
     # 注入能力图谱 — 本地桥优先（带重试），地枢降级
     _cap_done = False
     for bridge_url in [BRIDGE_URL, FALLBACK_BRIDGE]:
-        for attempt in range(1, 3):
+        for attempt in range(1, 4):  # ★ 2026-07-15: 2→3, 匹配诊断建议
             try:
                 req = request.Request(f"{bridge_url}/federation/nodes")
                 resp = request.urlopen(req, timeout=3)
@@ -218,7 +218,7 @@ def auto_onboard(force=False):
 
     # 扫描联邦桥节点列表 — 本地优先（带重试，抗瞬态SQLite I/O超时）
     nodes = None
-    MAX_RETRIES = 3
+    MAX_RETRIES = 5  # ★ 2026-07-15: 3→5, SQLite I/O竞争持续, 频率>3次/天
     for bridge_url in [BRIDGE_URL, FALLBACK_BRIDGE]:
         for attempt in range(1, MAX_RETRIES + 1):
             try:
