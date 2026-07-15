@@ -1,182 +1,153 @@
 #!/usr/bin/env python3
 """
-联邦外源营养雷达 v2.0 · 全域扫描·零成本
-领域: AI自进化·无人机·代码·自媒体·量化期货·视觉·视频·机巢机库·算法
-源: arXiv·GitHub·HuggingFace·新闻·论文·免费API
-输出: LGE基因库直接注入
+LGOX联邦外部雷达 v2.0 — 批量写入·30s超时·并发加速
+arXiv + GitHub + HuggingFace → 批量LGE基因 → 消化器增强
+部署: 天工DGX1 cron每6h
 """
-import json, urllib.request, os, time, re
+import urllib.request, json, time, os, xml.etree.ElementTree as ET
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-LGE = "http://100.116.0.29:8200"
-LOG = os.path.expanduser("~/lgox-ops/logs/external-radar-v2.log")
-STATE = os.path.expanduser("~/lgox-ops/data/radar-state.json")
+LGE = 'http://100.116.0.29:8200'
+LGE_KEY = 'lgox-gene-key-2025'
+BRIDGE = 'http://127.0.0.1:8765'
+TIMEOUT = 30  # 10→30秒
+GENES_WRITTEN = 0
+GENES_COLLECTED = []  # v2.0: 批量收集
 
-# 扫描源配置
-SOURCES = {
-    "arxiv": {
-        "queries": [
-            "AI agent self-evolution",
-            "drone inspection autonomous",
-            "quantitative finance machine learning",
-            "computer vision edge deployment",
-            "video generation diffusion model",
-            "UAV swarm coordination",
-            "automated code generation LLM",
-            "drone hangar automation docking",
-            "multi-agent federation",
-            "low-altitude economy drone",
-            "futures trading algorithm",
-            "neural rendering 3D reconstruction",
-        ],
-        "url": "https://export.arxiv.org/api/query?search_query=all:{query}&start=0&max_results=3"
-    },
-    "github": {
-        "queries": [
-            "drone-autopilot",
-            "uav-ground-station",
-            "quant-trading-bot",
-            "video-generation",
-            "agent-framework",
-            "federated-learning",
-            "computer-vision-drone",
-            "auto-code-review",
-        ],
-        "url": "https://api.github.com/search/repositories?q={query}+pushed:>2025-01-01&sort=updated&per_page=3"
-    },
-    "news_terms": [
-        "低空经济 无人机",
-        "AI agent 自治",
-        "量化交易 AI",
-        "视频生成 扩散模型",
-        "无人机机巢 自动",
-    ]
-}
-
-def load_state():
-    try: return json.load(open(STATE))
-    except: return {"scanned": {}, "total_genes": 0, "last_run": ""}
-
-def save_state(s):
-    json.dump(s, open(STATE,"w"), ensure_ascii=False)
-
-def log(msg):
-    ts = datetime.now().strftime("%H:%M:%S")
-    line = f"[{ts}] {msg}"
-    os.makedirs(os.path.dirname(LOG), exist_ok=True)
-    with open(LOG, "a") as f: f.write(line + "\n")
-    print(line, flush=True)
-
-def write_gene(content, memory_type="semantic", priority=0.6):
+def write_gene(content, source, tags):
+    """v2.0: 30s超时·重试·返回成功标志"""
     try:
-        data = json.dumps({"content": f"[外源雷达] {content}", 
-                          "memory_type": memory_type, "source": "external-radar-v2",
-                          "priority": priority}).encode()
-        req = urllib.request.Request(LGE + "/genes/write", data=data,
-                                      headers={"Content-Type": "application/json"})
-        resp = urllib.request.urlopen(req, timeout=5)
-        return json.loads(resp.read()).get("gene_id")
-    except:
-        return None
-
-def scan_arxiv(state):
-    """arXiv论文扫描"""
-    count = 0
-    for q in SOURCES["arxiv"]["queries"]:
-        key = f"arxiv:{q[:30]}"
+        data = json.dumps({
+            'content': content[:1200],
+            'memory_type': 'semantic',
+            'source': source,
+            'fitness': 0.35,  # 雷达原始扫描·消化器会提升
+            'tags': tags + ['external-radar', 'auto-ingest']
+        }, ensure_ascii=False).encode()
+        req = urllib.request.Request(f'{LGE}/genes/write', data=data,
+            headers={'Content-Type': 'application/json', 'X-LGE-Key': LGE_KEY})
+        r = json.loads(urllib.request.urlopen(req, timeout=TIMEOUT).read())
+        if r.get('gene_id'):
+            return r['gene_id']
+    except Exception as e:
+        # 重试一次
         try:
-            url = SOURCES["arxiv"]["url"].replace("{query}", urllib.request.quote(q))
-            req = urllib.request.Request(url, headers={"User-Agent": "LGOX-Federation/2.0"})
-            resp = urllib.request.urlopen(req, timeout=10)
-            text = resp.read().decode()
-            
-            entries = re.findall(r'<entry>(.*?)</entry>', text, re.DOTALL)
-            new_count = 0
-            for entry in entries[:2]:
-                title = re.search(r'<title>(.*?)</title>', entry)
-                summary = re.search(r'<summary>(.*?)</summary>', entry)
-                if title:
-                    t = title.group(1).strip()
-                    s = summary.group(1).strip()[:200] if summary else ""
-                    entry_id = t[:50]
-                    if entry_id not in state["scanned"]:
-                        gene = write_gene(f"arXiv·{q[:20]}·{t}·{s}", "semantic", 0.65)
-                        if gene:
-                            state["scanned"][entry_id] = gene
-                            new_count += 1
-            if new_count > 0:
-                log(f"📄 arXiv·{q[:25]}: +{new_count}基因")
-                count += new_count
-        except Exception as e:
-            pass
-    return count
-
-def scan_github(state):
-    """GitHub趋势扫描"""
-    count = 0
-    for q in SOURCES["github"]["queries"]:
-        key = f"github:{q}"
-        try:
-            url = SOURCES["github"]["url"].replace("{query}", urllib.request.quote(q))
-            req = urllib.request.Request(url, headers={"User-Agent": "LGOX-Federation/2.0",
-                                                        "Accept": "application/vnd.github.v3+json"})
-            resp = urllib.request.urlopen(req, timeout=10)
-            data = json.loads(resp.read())
-            
-            for repo in data.get("items", [])[:2]:
-                name = repo.get("full_name", "")
-                desc = repo.get("description", "") or ""
-                stars = repo.get("stargazers_count", 0)
-                if name and name not in state["scanned"]:
-                    gene = write_gene(f"GitHub·{name}·⭐{stars}·{desc[:150]}", "semantic", 0.6)
-                    if gene:
-                        state["scanned"][name] = gene
-                        count += 1
-            if count > 0:
-                log(f"🐙 GitHub·{q[:20]}: +{count}基因")
+            time.sleep(2)
+            req = urllib.request.Request(f'{LGE}/genes/write', data=data,
+                headers={'Content-Type': 'application/json', 'X-LGE-Key': LGE_KEY})
+            r = json.loads(urllib.request.urlopen(req, timeout=TIMEOUT).read())
+            if r.get('gene_id'):
+                return r['gene_id']
         except:
             pass
-    return count
+    return None
 
-def scan_llm_enrich(state):
-    """用免费LLM对热点术语生成深度基因(纯本地/免费)"""
-    # 基于联邦已有知识自进化——不依赖外部API
-    topics = [
-        ("七自基因·自进化体系", "LGOX联邦七自闭环:自感知→自协调→自愈合→自进化→自迭代→自反思→自约束·22飞轮·773K基因·永绿大将"),
-        ("无人机机巢自动化", "无人机机巢温控·自动充电·远程调度·DJI Cloud API·PSDK/MSDK·厘米级定位·AI巡检"),
-        ("量化交易算法演进", "夏普比率·最大回撤·MACD金叉·北向资金·注册制·高股息策略·PE/PB估值·ETF"),
-        ("视频AI生产线", "FFmpeg·HyperFrames·OpenMontage·PIL字幕·VideoUse·扩散模型·Seedance2·天影平台"),
-        ("联邦自治架构1000%", "多通多绿多路多冗余多灾备·22飞轮·双执行引擎·心跳矩阵·NODE_BRIDGES·公网级"),
-        ("AI代码编程工具矩阵", "LGOX-CC·Codex·天锋PRO·AST解析·LSP补全·批量Patch·七自编程飞轮"),
+def batch_write(genes):
+    """v2.0: 并发批量写入(3线程)·10秒超时变30秒"""
+    global GENES_WRITTEN
+    if not genes:
+        return
+    print(f'  批量写入 {len(genes)} 条基因(3并发)...')
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        futures = {pool.submit(write_gene, g[0], g[1], g[2]): g for g in genes}
+        for f in as_completed(futures):
+            result = f.result()
+            if result:
+                GENES_WRITTEN += 1
+
+# ═══ arXiv 扫描 ═══
+def scan_arxiv():
+    print('[arXiv] 扫描AI/ML最新论文...')
+    queries = ['large+language+model', 'AI+agent', 'multi+agent+system', 
+               'RAG+retrieval', 'autonomous+agent', 'LLM+fine+tuning']
+    genes = []
+    for q in queries:
+        try:
+            url = f'http://export.arxiv.org/api/query?search_query=all:{q}&sortBy=submittedDate&sortOrder=descending&max_results=3'
+            resp = urllib.request.urlopen(url, timeout=20)
+            root = ET.fromstring(resp.read())
+            ns = {'a': 'http://www.w3.org/2005/Atom'}
+            for entry in root.findall('a:entry', ns)[:3]:
+                title = entry.find('a:title', ns).text.strip().replace('\n', ' ')
+                summary = entry.find('a:summary', ns).text.strip()[:300]
+                arxiv_id = entry.find('a:id', ns).text.split('/')[-1]
+                gene_content = f'[arXiv] {title}\n{summary}\nID:{arxiv_id}'
+                genes.append((gene_content, f'arxiv-{arxiv_id}', ['arXiv', 'paper', q.replace('+', ' ')]))
+        except Exception as e:
+            print(f'  arXiv[{q}] err: {e}')
+    print(f'[arXiv] {len(genes)}篇待写入')
+    return genes
+
+# ═══ GitHub Trending ═══
+def scan_github():
+    print('[GitHub] 扫描AI趋势仓库...')
+    genes = []
+    try:
+        url = 'https://api.github.com/search/repositories?q=AI+agent+autonomous&sort=stars&order=desc&per_page=5'
+        req = urllib.request.Request(url, headers={
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'LGOX-Radar-v2'})
+        resp = urllib.request.urlopen(req, timeout=20)
+        data = json.loads(resp.read())
+        for repo in data.get('items', [])[:5]:
+            name = repo['full_name']
+            desc = repo.get('description', '') or ''
+            stars = repo['stargazers_count']
+            html_url = repo['html_url']
+            gene_content = f'[GitHub] {name} ⭐{stars}\n{desc}\n{html_url}'
+            genes.append((gene_content, f'github-{name}', ['GitHub', 'trending', 'AI']))
+        print(f'[GitHub] {len(genes)}个仓库待写入')
+    except Exception as e:
+        print(f'  GitHub err: {e}')
+    return genes
+
+# ═══ HuggingFace 热门 ═══
+def scan_huggingface():
+    print('[HuggingFace] 扫描热门模型...')
+    genes = []
+    # 尝试多个HF API端点
+    urls = [
+        'https://huggingface.co/api/models?sort=downloads&limit=5',
+        'https://huggingface.co/api/models?sort=likes&limit=5',
     ]
-    count = 0
-    for topic, content in topics:
-        key = f"enrich:{topic[:20]}"
-        if key not in state["scanned"]:
-            gene = write_gene(f"营养富化·{topic}·{content}", "semantic", 0.7)
-            if gene:
-                state["scanned"][key] = gene
-                count += 1
-    if count > 0:
-        log(f"🧠 营养富化: +{count}基因")
-    return count
+    for url in urls:
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'LGOX-Radar-v2'})
+            resp = urllib.request.urlopen(req, timeout=20)
+            data = json.loads(resp.read())
+            for model in data[:5]:
+                mid = model.get('modelId', model.get('id', ''))
+                downloads = model.get('downloads', 0)
+                likes = model.get('likes', 0)
+                gene_content = f'[HuggingFace] {mid} ↓{downloads} 👍{likes}'
+                genes.append((gene_content, f'hf-{mid}', ['HuggingFace', 'model', 'trending']))
+            if genes:
+                break
+        except Exception as e:
+            print(f'  HF[{url[:50]}] err: {e}')
+    print(f'[HuggingFace] {len(genes)}个模型待写入')
+    return genes
 
-def main():
-    state = load_state()
-    total = 0
+# ═══ 主流程 v2.0 ═══
+if __name__ == '__main__':
+    ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    print(f'[外部雷达v2.0] {ts} 启动扫描...')
     
-    log(f"🚀 外源雷达v2.0启动·{len(state['scanned'])}历史")
+    # 阶段1: 并发展开扫描
+    all_genes = []
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        futures = {
+            pool.submit(scan_arxiv): 'arXiv',
+            pool.submit(scan_github): 'GitHub', 
+            pool.submit(scan_huggingface): 'HuggingFace'
+        }
+        for f in as_completed(futures):
+            result = f.result()
+            all_genes.extend(result)
     
-    total += scan_arxiv(state)
-    total += scan_github(state)
-    total += scan_llm_enrich(state)
+    # 阶段2: 批量并发写入
+    batch_write(all_genes)
     
-    state["total_genes"] += total
-    state["last_run"] = datetime.now().isoformat()
-    save_state(state)
-    
-    log(f"✅ 本轮+{total}基因·累计{state['total_genes']}·{len(state['scanned'])}已扫描")
-    return total
-
-if __name__ == "__main__":
-    main()
+    print(f'\n[外部雷达v2.0] 完成. 写入 {GENES_WRITTEN}/{len(all_genes)} 条基因')
+    print(f'[{datetime.now().strftime("%H:%M:%S")}] 扫描结束')
