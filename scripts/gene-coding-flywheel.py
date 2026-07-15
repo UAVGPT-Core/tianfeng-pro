@@ -112,7 +112,7 @@ MEMORY_PATTERNS = {
             "    print(f'[MEM] {tag} RSS={mem_mb:.1f}MB GC总收集={total_gc_count}')",
         ],
     }
-    ALGORITHM_PATTERNS = {
+ALGORITHM_PATTERNS = {
     "two_pointer_pattern": [
         "# PATTERN: 双指针算法 (GENE-SEM-567ac54412f3bc58 接雨水)",
         "def two_pointer(height):",
