@@ -22,7 +22,18 @@ if not DEEPSEEK_KEY:
                     DEEPSEEK_KEY = line.split("=",1)[1].strip().strip('"').strip("'")
                     break
     except: pass
-DS_URL = "https://api.deepseek.com/v1/chat/completions"
+DS_URL = "https://api.deepseek.com/v1/chat/completions"  # 降级备路
+VOD_KEY = os.getenv("BAIDU_VOD_KEY", "")
+if not VOD_KEY:
+    try:
+        with open(os.path.expanduser("~/.hermes/.env")) as f:
+            for line in f:
+                if line.startswith("BAIDU_VOD_KEY="):
+                    VOD_KEY = line.split("=",1)[1].strip().strip('"').strip("'")
+                    break
+    except: pass
+VOD_URL = "https://vod.bj.baidubce.com/v3/chat/oc/v1/chat/completions"  # 主路·免费·1.2s
+
 LGE_URL = "http://127.0.0.1:8769/query"
 EVIDENCE_ENABLED = True
 # ═══ Widget Spec v1.0（GCP子协议·浮窗部署规范） — 基因通讯协议标准 ═══
@@ -281,7 +292,12 @@ async def chat(request: Request):
     if history: messages.extend(history[-6:])
     messages.append({"role": "user", "content": question})
     try:
-        resp = await call_deepseek(messages)
+        resp = await asyncio.to_thread(_vod)
+    except Exception:
+        try:
+            resp = await asyncio.to_thread(_ds)
+        except Exception:
+            resp = await call_deepseek(messages)
         answer = resp["choices"][0]["message"]["content"]
         tokens = resp.get("usage", {}).get("total_tokens", 0)
     except Exception as e:

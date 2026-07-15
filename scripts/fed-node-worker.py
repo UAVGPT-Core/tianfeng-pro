@@ -136,7 +136,7 @@ def execute_task(task):
     from_node = task.get("from_node", task.get("from", "天枢"))
     rt_trigger = ("TYPE:天枢CEO圆桌" in content or "TYPE:圆桌" in content or (
         from_node in ("天枢","灵龙") and any(kw in content for kw in
-            ["待灵龙审阅","请灵龙回答","请回答","圆桌提案","记忆宪法"])))
+            ["待灵龙审阅","请灵龙回答","请回答","圆桌提案","记忆宪法","ROUNDTABLE_PROPOSAL"])))
     if rt_trigger:
         try:
             # Query Linglong local system state

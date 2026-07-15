@@ -297,7 +297,8 @@ print(f"   path={DATA_PATH}")
 
 # ── 10. SCP to 天枢 (公网数据流关键) ──
 TIANSHU_PATH = "/Users/a1/.hermes/data/graph-data.json"
-scp_rc = os.system(f"scp -o ConnectTimeout=10 {DATA_PATH} tianshu:{TIANSHU_PATH}")
+rc = os.system(f"scp -o ConnectTimeout=10 {DATA_PATH} tianshu:{TIANSHU_PATH}")
+scp_rc = rc >> 8 if rc else 0
 print(f"[SCP] to tianshu: exit={scp_rc}")
 
 # ── 11. Verify local :8770 + :8799 (graph_data_server may be killed) ──
@@ -317,12 +318,19 @@ try:
 except Exception as e:
     print(f"[API-public] error: {e}")
 
-# ── 13. Verify tianshu file (avoid shell escaping — use subprocess + python3 -c) ──
-# 🔴 NOT curl|python3 — use python3 reading the file directly on tianshu
+# ── 13. Verify tianshu file (avoid shell escaping) ──
+verify_script = """
+import json
+d = json.load(open('/Users/a1/.hermes/data/graph-data.json'))
+print(f"nodes={d['total_nodes']}, ts={d['timestamp'][:19]}, lge={d.get('lge_total_genes',0)}")
+"""
+# Write verify script, scp it, run it on tianshu
+vp = "/tmp/_verify_gd.py"
+with open(vp, "w") as f:
+    f.write(verify_script.strip())
+os.system(f"scp -o ConnectTimeout=10 {vp} tianshu:{vp}")
 try:
-    out = run(["ssh", "-o", "ConnectTimeout=8", "tianshu",
-        "python3 -c \"import json; d=json.load(open('/Users/a1/.hermes/data/graph-data.json')); print(f'nodes={d[\\\"total_nodes\\\"]}, ts={d[\\\"timestamp\\\"][:19]}, lge={d.get(\\\"lge_total_genes\\\",0)}')\""],
-        timeout=15)
+    out = run(["ssh", "-o", "ConnectTimeout=8", "tianshu", f"python3 {vp}"], timeout=15)
     print(f"[TIANSHU-file] {out.strip()}")
 except Exception as e:
     print(f"[TIANSHU-file] error: {e}")
