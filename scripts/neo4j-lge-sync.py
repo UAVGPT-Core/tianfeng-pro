@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-neo4j-lge-sync.py — LGOX联邦 Neo4j图谱+LGE数据同步
-=====================================================
+neo4j-lge-sync.py — LGOX联邦 Neo4j图谱+LGE数据同步 (STANDALONE)
+=================================================================
 Cron invoked (no_agent mode) — standalone script, no hermes_tools dependency.
 
 从灵龙SSH到地枢DGX2 → 13条Cypher查询 → LGE健康 → 写入graph-data.json
@@ -17,19 +17,21 @@ Cron invoked (no_agent mode) — standalone script, no hermes_tools dependency.
 - 时间戳防双时区
 - 保留已有 top_fitness_genes 字段
 
-Synced from: lgox-graph-data-sync skill → scripts/sync-graph-data.py
+部署路径: /Users/a112233/lgox-ops/scripts/neo4j-lge-sync.py
+Cron任务: 6ddff9cbcc58 (Hermes, every 60m, no_agent=true)
 """
 
 import subprocess
 import json
 import csv
 import io
+import shutil
 import time
 import sys
 import os
+import urllib.request
 
-SSH = ["ssh", "-o", "StrictHostKeyChecking=no", "uavgpt2@100.116.0.29"]
-CYPHER_BASE = ["docker", "exec", "neo4j", "cypher-shell", "-u", "neo4j", "-p", "lgox2026"]
+SSH = ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=15", "dgx2"]
 DATA_PATH = os.path.expanduser("~/.hermes/data/graph-data.json")
 
 def run(cmd, timeout=30):
@@ -48,8 +50,9 @@ def ssh(cmd_str, timeout=30):
     return run(SSH + [cmd_str], timeout=timeout)
 
 def cypher(query, timeout=30):
-    """Run a Cypher query via cypher-shell on dgx2."""
-    return ssh(f"docker exec neo4j cypher-shell -u neo4j -p lgox2026 '{query}'", timeout=timeout)
+    """Run a Cypher query via cypher-shell on dgx2. Escapes single quotes."""
+    safe = query.replace("'", "'\\''")
+    return ssh(f"docker exec neo4j cypher-shell -u neo4j -p lgox2026 '{safe}'", timeout=timeout)
 
 # ── 0. Neo4j alive check ──
 status = ssh("docker ps --filter name=neo4j --format '{{.Status}}'", timeout=10).strip()
@@ -99,7 +102,7 @@ for key, q in queries.items():
             results[key] = cypher(q)
     print(f"[1] {key}: {len(results[key])} chars")
 
-# ── 2. LGE health ──
+# ── 2. LGE health (🔴 不要加 -H "X-LGE-Key:..." — LGE v2.0 会返回 genes=0)
 lge_raw = ssh(
     'curl -sf --max-time 10 http://127.0.0.1:8200/health',
     timeout=15
@@ -250,6 +253,9 @@ except:
     pass
 
 # ── 9. Assemble and write ──
+lge_total_genes = lge_health.get("genes", 0) if isinstance(lge_health, dict) else 0
+lge_active_genes = lge_health.get("active", 0) if isinstance(lge_health, dict) else 0
+
 output = {
     "timestamp": ts,
     "updated_at": updated_at,
@@ -268,24 +274,57 @@ output = {
     "top_concepts": top_concepts,
     "top_genes": top_genes,
     "lge_health": lge_health,
+    "lge_total_genes": lge_total_genes,
+    "lge_active_genes": lge_active_genes,
+    "lge_status": f"synced from dishu:8200 ({lge_total_genes} genes, {lge_active_genes} active)",
+    "dishu_status": "online",
+    "neo4j_status": "ok",
 }
 if existing_tfg:
     output["top_fitness_genes"] = existing_tfg
 
 os.makedirs(os.path.dirname(DATA_PATH), exist_ok=True)
+
+# Backup existing before overwrite
+if os.path.exists(DATA_PATH):
+    shutil.copy2(DATA_PATH, DATA_PATH + ".bak")
+
 with open(DATA_PATH, "w") as f:
     json.dump(output, f, ensure_ascii=False, indent=2)
 
-print(f"\n✅ WRITTEN: nodes={total_nodes} genes={gene_count} rels={total_rels} density={density}")
+print(f"\n✅ WRITTEN: nodes={total_nodes} genes={gene_count} rels={total_rels} density={density} lge={lge_total_genes}")
 print(f"   path={DATA_PATH}")
 
-# ── 10. API verify ──
-try:
-    import urllib.request
-    req = urllib.request.urlopen("http://127.0.0.1:8770/api/graph-data", timeout=5)
-    v = json.loads(req.read())
-    print(f"✅ API OK: {v.get('total_nodes')} nodes, {v.get('gene_count')} genes")
-except Exception as e:
-    print(f"⚠️  API check skipped: {e}")
+# ── 10. SCP to 天枢 (公网数据流关键) ──
+TIANSHU_PATH = "/Users/a1/.hermes/data/graph-data.json"
+scp_rc = os.system(f"scp -o ConnectTimeout=10 {DATA_PATH} tianshu:{TIANSHU_PATH}")
+print(f"[SCP] to tianshu: exit={scp_rc}")
 
-print("✅ SYNC COMPLETE")
+# ── 11. Verify local :8770 + :8799 (graph_data_server may be killed) ──
+for port in [8770, 8799]:
+    try:
+        req = urllib.request.urlopen(f"http://127.0.0.1:{port}/api/graph-data", timeout=5)
+        v = json.loads(req.read())
+        print(f"[API:{port}] nodes={v.get('total_nodes')}, ts={v.get('timestamp','?')[:19]}")
+    except Exception as e:
+        print(f"[API:{port}] error: {e}")
+
+# ── 12. Verify public endpoint (stock.uavgpt.com) ──
+try:
+    req = urllib.request.urlopen(f"https://stock.uavgpt.com/api/graph-data?v={int(time.time())}", timeout=10)
+    v = json.loads(req.read())
+    print(f"[API-public] nodes={v.get('total_nodes')}, ts={v.get('timestamp','?')[:19]}, lge={v.get('lge_total_genes','?')}")
+except Exception as e:
+    print(f"[API-public] error: {e}")
+
+# ── 13. Verify tianshu file (avoid shell escaping — use subprocess + python3 -c) ──
+# 🔴 NOT curl|python3 — use python3 reading the file directly on tianshu
+try:
+    out = run(["ssh", "-o", "ConnectTimeout=8", "tianshu",
+        "python3 -c \"import json; d=json.load(open('/Users/a1/.hermes/data/graph-data.json')); print(f'nodes={d[\\\"total_nodes\\\"]}, ts={d[\\\"timestamp\\\"][:19]}, lge={d.get(\\\"lge_total_genes\\\",0)}')\""],
+        timeout=15)
+    print(f"[TIANSHU-file] {out.strip()}")
+except Exception as e:
+    print(f"[TIANSHU-file] error: {e}")
+
+print("\n✅ SYNC COMPLETE")
