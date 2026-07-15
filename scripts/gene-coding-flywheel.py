@@ -19,24 +19,26 @@ from datetime import datetime
 from pathlib import Path
 
 HOME = Path(os.environ.get("HOME", "/Users/a112233"))
-# 导入基因注入引擎的内置模式库（26套·免查LGE·零token）
+# ─── 导入基因注入引擎的内置模式库（高频模式·免查LGE·零token）
+# 注意：保存本地定义的补充模式，避免被import覆盖
 sys.path.insert(0, str(HOME / "lgox-ops/scripts"))
 try:
-    from gene_injection_engine import BUILTIN_PATTERNS
+    from gene_injection_engine import BUILTIN_PATTERNS as _IMPORTED_PATTERNS
     _HAS_BUILTIN = True
 except ImportError:
     try:
         import importlib
         if not (HOME / "lgox-ops/scripts/gene_injection_engine.py").exists():
             os.system(f"ln -sf {HOME}/lgox-ops/scripts/gene-injection-engine.py {HOME}/lgox-ops/scripts/gene_injection_engine.py")
-        from gene_injection_engine import BUILTIN_PATTERNS
+        from gene_injection_engine import BUILTIN_PATTERNS as _IMPORTED_PATTERNS
         _HAS_BUILTIN = True
     except:
-        BUILTIN_PATTERNS = {}
+        _IMPORTED_PATTERNS = {}
         _HAS_BUILTIN = False
+BUILTIN_PATTERNS = dict(_IMPORTED_PATTERNS)  # Start with imported patterns
+# Merge with locally-defined patterns (attention, memory, algorithms)
+_ATTENTION_PATTERNS = {
 
-# 扩展BUILTIN_PATTERNS: 算法 + 内存/OOM 模式（gene-coding-flywheel专用）
-ATTENTION_PATTERNS = {
     "attention_scaled_dot_product": [
         "# PATTERN: Scaled Dot-Product Attention (GENE-PRO-ATTN-v1)",
         "import numpy as np",
@@ -356,6 +358,51 @@ MEMORY_PATTERNS = {
         "        return data",
     ],
 
+    # ── 系统设计/存储/分块上传模式 ──
+    "object_storage_pattern": [
+        "# PATTERN: 对象存储·块存储引擎 (GENE-PRO: STORAGE-v1)",
+        "# 分块上传模式:",
+        "def upload_chunk(file_path, chunk_index, chunk_data, upload_id):",
+        "    \"\"\"分块上传·支持断点续传\"\"\"",
+        "    chunk_key = f'{upload_id}/chunk_{chunk_index:06d}'",
+        "    # 保存到临时存储",
+        "    with open(f'/tmp/staging/{chunk_key}', 'wb') as f:",
+        "        f.write(chunk_data)",
+        "    # 记录分块元数据",
+        "    metadata[chunk_key] = {'size': len(chunk_data), 'hash': hashlib.md5(chunk_data).hexdigest()}",
+        "    return chunk_key",
+        "",
+        "def complete_upload(upload_id, total_chunks):",
+        "    \"\"\"合并分块完成上传\"\"\"",
+        "    with open(f'/data/final/{upload_id}.bin', 'wb') as out:",
+        "        for i in range(total_chunks):",
+        "            chunk_key = f'{upload_id}/chunk_{i:06d}'",
+        "            if chunk_key not in metadata:",
+        "                # 检查缺失块并尝试恢复",
+        "                raise MissingChunkError(f'Missing chunk {i}')",
+        "            with open(f'/tmp/staging/{chunk_key}', 'rb') as f:",
+        "                out.write(f.read())",
+        "    return upload_id",
+        "",
+        "# 断点续传:",
+        "def list_uploaded_chunks(upload_id):",
+        "    \"\"\"返回已上传的分块索引列表\"\"\"",
+        "    return [k for k in metadata if k.startswith(f'{upload_id}/chunk_')]",
+        "",
+        "# 存储引擎抽象:",
+        "class StorageBackend(ABC):",
+        "    @abstractmethod",
+        "    def put(self, key, data): pass",
+        "    @abstractmethod",
+        "    def get(self, key): pass",
+        "    @abstractmethod",
+        "    def delete(self, key): pass",
+        "class FileSystemBackend(StorageBackend):",
+        "    def put(self, key, data): Path(key).write_bytes(data)",
+        "    def get(self, key): return Path(key).read_bytes()",
+        "    def delete(self, key): Path(key).unlink(missing_ok=True)",
+    ],
+
     }
 ALGORITHM_PATTERNS = {
     "two_pointer_pattern": [
@@ -453,7 +500,7 @@ ALGORITHM_PATTERNS = {
 }
 BUILTIN_PATTERNS.update(ALGORITHM_PATTERNS)
 BUILTIN_PATTERNS.update(MEMORY_PATTERNS)
-BUILTIN_PATTERNS.update(ATTENTION_PATTERNS)
+BUILTIN_PATTERNS.update(_ATTENTION_PATTERNS)
 
 # LGE基因库集群（三级降级: 地枢主库→天枢LGE→灵龙LGA本地）
 LGE_POOL = [
@@ -558,20 +605,25 @@ def search_lge(query, limit=5):
         if results:
             return results
 
-    # 第四级: SSH代理到天枢（当直连全部失败时）
+    # 第四级: SSH代理到天枢（直连全部失败时通过天枢访问LGE）
     if _connectivity_cache.get(LGE_POOL[1]) is not True and _connectivity_cache.get(LGE_POOL[0]) is not True:
         try:
             import subprocess as sp
             qjson = json.dumps({"query": query, "n_results": limit})
+            # 使用stdin管道(-d @-)代替shell拼接，避免引号转义问题
             ssh_cmd = ["ssh", "-o", "ConnectTimeout=5", "-o", "StrictHostKeyChecking=no",
-                       "a1@100.100.89.2", "curl -s --max-time 8 -X POST http://100.100.89.2:8201/genes/search -H 'Content-Type: application/json' -d " + qjson]
-            result = sp.run(ssh_cmd, capture_output=True, text=True, timeout=15)
+                       "a1@100.100.89.2",
+                       "curl -s --max-time 10 -X POST http://100.100.89.2:8201/genes/search -H 'Content-Type: application/json' -d @-"]
+            result = sp.run(ssh_cmd, input=qjson, capture_output=True, text=True, timeout=15)
             if result.returncode == 0:
                 data = json.loads(result.stdout)
                 results = [r.get("content", "") for r in data.get("results", [])]
                 if results:
                     print(f"  [OK] search_lge(SSH→天枢) → {len(results)}条", file=__import__('sys').stderr)
+                    _connectivity_cache[LGE_POOL[1]] = True  # 标记可达
                     return results
+        except json.JSONDecodeError:
+            print(f"  [WARN] SSH天枢返回非JSON: {result.stdout[:80]}", file=__import__('sys').stderr)
         except Exception as e:
             print(f"  [WARN] SSH天枢代理失败: {str(e)[:50]}", file=__import__('sys').stderr)
 
@@ -746,6 +798,7 @@ def search_builtin_patterns(task_description):
         "gc|垃圾回收|垃圾收集|gc阈值|gc调优|garbage collector|垃圾": "gc_tuning_pattern",
         "tracemalloc|内存追踪|memory trace|内存分配|对象分配|对象大小": "tracemalloc_pattern",
         "内存监控|监控内存|memory usage|rss|mem_usage|内存使用|psutil": "mem_usage_monitor",
+        "对象存储|块存储|分块上传|断点续传|chunk|upload_id|resume|storage backend|object storage|storage engine": "object_storage_pattern",
     }
     
     for pattern, pattern_name in keyword_map.items():
