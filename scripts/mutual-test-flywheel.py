@@ -302,7 +302,37 @@ else:
     print(f"  一致性:{consistency} · 胜者:{winner}")
     
     conn.execute("INSERT INTO cross_validations(ts,question,xiaoshu_answer,tianxun_answer,xiaoshu_score,tianxun_score,consistency) VALUES(?,?,?,?,?,?,?)",
-        (now.isoformat(), q, a_x[:500], a_t[:500], avg_x, avg_t, consistency))
+        (now.isoformat(), q, a_x[:500], a_t[:500],],],],
+    "联邦运维": [
+        "如何诊断launchd服务崩溃？",
+        "nginx反向代理WebSocket需要什么配置？",
+        "SQLite FTS5和BM25全文索引有什么区别？",
+        "Docker overlay网络和bridge网络何时用哪个？",
+        "Tailscale ACL如何限制节点间访问？",
+        "cron任务积压如何检测和治理？",
+        "Python asyncio中Semaphore和Lock的区别？",
+        "如何用Prometheus监控GPU温度？",
+    ]
+    "无人机深度": [
+        "无人机自主巡检需要哪些核心传感器？",
+        "RTK定位和PPK定位有什么区别？",
+        "无人机避障技术有哪些主流方案？",
+        "机巢自动换电的机械结构如何设计？",
+        "5.8GHz和2.4GHz图传各有什么优劣？",
+        "无人机在桥梁检测中如何做裂缝识别？",
+        "大疆PSDK和MSDK分别适合什么场景？",
+        "激光雷达SLAM和视觉SLAM各适合什么场景？",
+    ]
+    "金融深度": [
+        "什么是BS期权定价模型？核心假设是什么？",
+        "A股T+1制度对量化策略有什么影响？",
+        "如何用蒙特卡洛模拟计算VaR？",
+        "期货升贴水对套利策略有什么影响？",
+        "ETF折溢价套利的原理和风险是什么？",
+        "可转债的转股溢价率和纯债溢价率如何理解？",
+        "A股融资融券余额变化对市场有什么指示意义？",
+        "股指期货基差为正是什么意思？",
+    ] avg_x, avg_t, consistency))
     conn.commit()
     
     all_scores.extend([avg_x, avg_t])
@@ -339,3 +369,37 @@ today_rounds = conn.execute("SELECT COUNT(*),AVG(avg_score) FROM rounds WHERE ts
 print(f"[{now.strftime('%H:%M')}] 完成 | 今日{today_rounds[0]}轮·均{today_rounds[1]:.2f}分 | 纳基因{genes_written}条")
 
 conn.close()
+
+# ═══ 扩充题库(2026-07-15 榨干行动) ═══
+EXTRA_QUESTIONS = {
+    "金融深度": [
+        "BS期权定价模型核心假设",
+        "A股T1对量化影响",
+        "蒙特卡洛计算VaR",
+        "期货升贴水套利",
+        "ETF折溢价套利",
+        "可转债溢价率",
+        "融资融券余额意义",
+        "股指期货基差",
+    ],
+    "无人机深度": [
+        "自主巡检传感器",
+        "RTK与PPK区别",
+        "避障技术方案",
+        "机巢自动换电",
+        "图传频段优劣",
+        "桥梁裂缝识别",
+        "PSDK和MSDK场景",
+        "激光视觉SLAM对比",
+    ],
+    "联邦运维": [
+        "launchd崩溃诊断",
+        "nginx WS代理配置",
+        "FTS5与BM25对比",
+        "Docker网络选型",
+        "Tailscale ACL限制",
+        "cron积压检测",
+        "asyncio信号量",
+        "GPU温度监控",
+    ],
+}
