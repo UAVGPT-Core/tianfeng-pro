@@ -166,6 +166,41 @@ def multi_dim_score(question, answer, answerer):
     avg = round(sum(scores.values())/6, 2)
     return scores, avg
 
+
+# ═══ VOD Pro引擎(免费·高质量评分) ═══
+def _get_vod_key():
+    import os
+    with open(os.path.expanduser("~/.hermes/.env")) as ef:
+        for line in ef:
+            if "BAIDU_VOD_KEY" in line:
+                return line.split("=",1)[1].strip().strip('"').strip("'")
+    return ""
+
+def chat_pro(question, max_tokens=300):
+    """VOD Pro·高质量推理"""
+    try:
+        vod_key = _get_vod_key()
+        data = json.dumps({"model":"deepseek-v4-pro","messages":[{"role":"user","content":question}],
+            "max_tokens":max_tokens,"temperature":0.3,"stream":False}).encode()
+        req = urllib.request.Request("https://vod.bj.baidubce.com/v3/chat/oc/v1/chat/completions",
+            data=data, headers={"Content-Type":"application/json","Authorization":f"Bearer {vod_key}"})
+        with urllib.request.urlopen(req, timeout=35) as r:
+            return json.loads(r.read())["choices"][0]["message"]["content"]
+    except: return ""
+
+def pro_dual_score(question, a_x, a_t):
+    """VOD Pro双答对比评分·精准裁决"""
+    try:
+        vod_key = _get_vod_key()
+        q = f"请评分以下两个AI回答哪个更好(0-10):\n问题:{question[:150]}\nA:{a_x[:200]}\nB:{a_t[:200]}\n只返回JSON:{{\"a\":分,\"b\":分,\"winner\":\"A/B/平\",\"why\":\"10字\"}}"
+        data = json.dumps({"model":"deepseek-v4-pro","messages":[{"role":"user","content":q}],
+            "max_tokens":100,"temperature":0.1,"stream":False}).encode()
+        req = urllib.request.Request("https://vod.bj.baidubce.com/v3/chat/oc/v1/chat/completions",
+            data=data, headers={"Content-Type":"application/json","Authorization":f"Bearer {vod_key}"})
+        with urllib.request.urlopen(req, timeout=35) as r:
+            return json.loads(r.read())["choices"][0]["message"]["content"]
+    except: return ""
+
 def write_gene(content, fitness):
     try:
         data = json.dumps({"content":content,"memory_type":"episodic",
@@ -256,11 +291,14 @@ else:
     s_t, avg_t = multi_dim_score(q, a_t, "天巡")
     print(f"  天巡: {avg_t:.2f}分 | {a_t[:60]}...")
     
+    # VOD Pro精准评分
+    pro_judge = pro_dual_score(q, a_x, a_t)
     # 一致性评分
     overlap = len(set(a_x[:100]) & set(a_t[:100]))
     consistency = round(min(1.0, overlap / 50), 2)
     
     winner = "小枢" if avg_x > avg_t else ("天巡" if avg_t > avg_x else "平局")
+    if pro_judge: print(f"  Pro裁决: {pro_judge[:120]}")
     print(f"  一致性:{consistency} · 胜者:{winner}")
     
     conn.execute("INSERT INTO cross_validations(ts,question,xiaoshu_answer,tianxun_answer,xiaoshu_score,tianxun_score,consistency) VALUES(?,?,?,?,?,?,?)",
