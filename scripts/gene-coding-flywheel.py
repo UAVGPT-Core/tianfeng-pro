@@ -35,8 +35,84 @@ except ImportError:
         BUILTIN_PATTERNS = {}
         _HAS_BUILTIN = False
 
-# 扩展BUILTIN_PATTERNS: 算法模式（gene-coding-flywheel专用）
-ALGORITHM_PATTERNS = {
+# 扩展BUILTIN_PATTERNS: 算法 + 内存/OOM 模式（gene-coding-flywheel专用）
+MEMORY_PATTERNS = {
+        "memory_leak_debug": [
+            "# PATTERN: OOM/内存泄漏调试 (GENE-PRO: OOM-DEBUG-v1)",
+            "# 常见内存泄漏场景:",
+            "#  - 全局缓存/静态集合无限增长 → 设上限/WeakRef/LRU",
+            "#  - 循环引用(带__del__) → 弱引用weakref.ref()",
+            "#  - 闭包/回调持有大对象 → 取消注册/局部变量",
+            "#  - 大对象未释放(图片/BytesIO/numpy) → del + gc.collect()",
+            "#  - logger/handler泄漏 → 每调用cleanup()",
+            "# OOM排查工具:",
+            "#  import tracemalloc; tracemalloc.start()",
+            "#  snapshot = tracemalloc.take_snapshot()",
+            "#  top_stats = snapshot.statistics('lineno')",
+            "#  for stat in top_stats[:10]: print(stat)",
+            "# 也可: objgraph.show_growth() / pympler.summary.summarize()",
+            "# GC调优: gc.set_threshold(700, 10, 5) · gc.set_debug(gc.DEBUG_LEAK)",
+            "# Python 3.12+: sys.mem_get_alloc_stats()",
+        ],
+        "weakref_pattern": [
+            "# PATTERN: 弱引用避免循环引用 (GENE-SEM-weakref)",
+            "import weakref",
+            "class Node:",
+            "    def __init__(self, value):",
+            "        self.value = value",
+            "        self.parent = None  # 强引用",
+            "        self._children = weakref.WeakSet()  # 子结点用弱集",
+            "    def add_child(self, child):",
+            "        self._children.add(child)",
+            "        child.parent = weakref.ref(self)  # 父结点弱引用",
+        ],
+        "gc_tuning_pattern": [
+            "# PATTERN: GC调优 (GENE-PRO: GC-TUNE-v1)",
+            "import gc",
+            "# 查看当前阈值: gc.get_threshold() → (700, 10, 10)",
+            "# 调大阈值减少GC频率(适合内存充裕):",
+            "gc.set_threshold(1500, 20, 20)",
+            "# 调小阈值加速回收(适合内存紧张):",
+            "# gc.set_threshold(300, 5, 3)",
+            "# 手动触发: gc.collect(0) → 年轻代 ; gc.collect(2) → 全代",
+            "# 禁用自动GC(批量操作时):",
+            "gc.disable()",
+            "# ...大量对象创建...",
+            "gc.collect()",
+            "gc.enable()",
+            "# 查看不可达但未回收对象: gc.garbage",
+            "# Python3.11+ sys.breakpointhook() + gc.DEBUG_LEAK",
+        ],
+        "tracemalloc_pattern": [
+            "# PATTERN: Python内存追踪 (GENE-PRO: TRACEMALLOC-v1)",
+            "import tracemalloc, linecache, os",
+            "",
+            "tracemalloc.start(25)  # 25帧堆栈深度",
+            "# ...运行疑似泄漏代码...",
+            "snapshot = tracemalloc.take_snapshot()",
+            "top = snapshot.statistics('lineno')[:15]",
+            "",
+            "print('[Top 15 内存分配]')",
+            "for stat in top:",
+            "    print(f'{stat.count:>6} blocks → {stat.size/1024:.1f} KB → {stat.traceback.format()[0]}')",
+            "    frame = stat.traceback[0]",
+            "    filename, lineno = frame.filename, frame.lineno",
+            "    line = linecache.getline(filename, lineno).strip()",
+            "    if line:",
+            "        print(f'    └─ {line}')",
+        ],
+        "mem_usage_monitor": [
+            "# PATTERN: 内存用量监控 (GENE-PRO: MEM-MONITOR-v1)",
+            "import psutil, os, gc",
+            "def log_mem_usage(tag=''):",
+            "    proc = psutil.Process(os.getpid())",
+            "    mem_mb = proc.memory_info().rss / 1024 / 1024",
+            "    gc_info = gc.get_stats()",
+            "    total_gc_count = sum(g['collected'] for g in gc_info)",
+            "    print(f'[MEM] {tag} RSS={mem_mb:.1f}MB GC总收集={total_gc_count}')",
+        ],
+    }
+    ALGORITHM_PATTERNS = {
     "two_pointer_pattern": [
         "# PATTERN: 双指针算法 (GENE-SEM-567ac54412f3bc58 接雨水)",
         "def two_pointer(height):",
@@ -92,6 +168,7 @@ ALGORITHM_PATTERNS = {
     ],
 }
 BUILTIN_PATTERNS.update(ALGORITHM_PATTERNS)
+BUILTIN_PATTERNS.update(MEMORY_PATTERNS)
 
 # LGE基因库集群（三级降级: 地枢主库→天枢LGE→灵龙LGA本地）
 LGE_POOL = [
@@ -240,23 +317,57 @@ def _try_http_search(url, query, limit):
 
 
 def extract_coding_genes(task_description):
-    """基因感知: 多词短搜索+LGE检索（LGE不支持长中文/特殊字符查询）"""
+    """基因感知: 多粒度中文关键词分解 + LGE检索"""
     results = []
-    
-    # 提取任务关键词（去特殊字符，拆短词）
     import re
-    clean = re.sub(r'[⚡·—•→★🐛🗄️🤖🔧📊🔄📦]', ' ', task_description)
-    # 从任务描述提取有意义的关键词
-    words = [w.strip() for w in clean.replace(':', ' ').replace('/', ' ').split() if len(w.strip()) >= 2]
     
-    # 用每个关键词独立搜索（LGE不支持长query）
-    for word in words[:5]:
-        q = word[:20]  # 确保不超长
+    # 去特殊字符
+    clean = re.sub(r'[⚡·—•→★🐛🗄️🤖🔧📊🔄📦🐛]', ' ', task_description)
+    
+    # ① 原始词: 用:-/空格拆分
+    raw_words = [w.strip() for w in clean.replace(':', ' ').replace('/', ' ').replace('—', ' ').replace('-', ' ').replace('（', ' ').replace('）', ' ').split() if len(w.strip()) >= 2]
+    
+    # ② 中文语义分解: "OOM深度排查" → ["OOM", "深度", "排查"]
+    #   "修复大对象+GC不及时导致的OOM" → ["修复", "大对象", "GC", "不及时", "导致", "OOM"]
+    decomposed = []
+    for w in raw_words:
+        # 英文/数字词保持原样
+        if re.match(r'^[A-Za-z0-9_+]+$', w):
+            decomposed.append(w)
+        else:
+            # 中英混合词: 按中文/英文边界拆分
+            mixed = re.findall(r'[A-Za-z0-9]+|[^\W\d_]+', w)
+            for sub in mixed:
+                if len(sub) >= 2:
+                    decomposed.append(sub)
+                elif len(sub) == 1 and sub.isascii() and sub.isupper():
+                    decomposed.append(sub)  # 单个大写字母(OOM中的O也可以用)
+                elif len(sub) >= 2 and sub.isalpha():
+                    decomposed.append(sub)
+    
+    # ③ 合并所有候选词
+    all_terms = list(dict.fromkeys(raw_words + decomposed))  # 去重保序
+    
+    # ④ 按优先级搜索: 短词优先(更可能匹配)
+    # 先搜单个技术词
+    tech_terms = [t for t in all_terms if t.isascii() and len(t) >= 2]
+    for t in tech_terms[:5]:
+        q = t[:15]
         r = search_lge(q, 3)
         if r:
             results.extend(r)
+            break  # 一个技术词搜到就够了
     
-    # 如果没搜到，尝试泛编程查询
+    # 再搜中文词
+    if not results:
+        cn_terms = [t for t in all_terms if not t.isascii() and len(t) >= 2]
+        for t in cn_terms[:3]:
+            r = search_lge(t[:10], 3)
+            if r:
+                results.extend(r)
+                break
+    
+    # ⑤ 如果全没搜到，用泛编程fallback
     if not results:
         fallbacks = ["编程", "算法", "Python", "设计模式", "代码"]
         for fb in fallbacks:
@@ -326,6 +437,11 @@ def search_builtin_patterns(task_description):
         "动态规划|dp|递推|状态转移|最优子结构|背包|fibonacci|斐波那契|LCS|LIS|子序列": "dp_pattern",
         "lru缓存|lru|最近最少使用|cache淘汰|ordereddict|淘汰策略|least recently": "lru_cache_pattern",
         "二分查找|binary search|二分法|二分搜索|二分答案|对数时间|log n": "binary_search_pattern",
+        "OOM|内存泄漏|内存泄露|gc|垃圾回收|垃圾收集|tracemalloc|内存溢出|memory leak|memory profiler|堆内存|heap|大对象": "memory_leak_debug",
+        "weakref|弱引用|循环引用|circular reference": "weakref_pattern",
+        "gc|垃圾回收|垃圾收集|gc阈值|gc调优|garbage collector|垃圾": "gc_tuning_pattern",
+        "tracemalloc|内存追踪|memory trace|内存分配|对象分配|对象大小": "tracemalloc_pattern",
+        "内存监控|监控内存|memory usage|rss|mem_usage|内存使用|psutil": "mem_usage_monitor",
     }
     
     for pattern, pattern_name in keyword_map.items():
