@@ -680,9 +680,10 @@ def select_challenges(rounds=5):
 
     selected = []
     dims = list(CHALLENGES.keys())
-    # 轮换维度，每个维度选当前的难度
+    # 轮换维度：基于累计轮数偏移，真正轮换 (fix: 之前i从0开始，2轮永远选dim[0]+dim[1])
+    offset = state.get("total_rounds", 0) % len(dims)
     for i in range(rounds):
-        dim = dims[i % len(dims)]
+        dim = dims[(offset + i) % len(dims)]
         dim_state = state["dimensions"].get(dim, {"level": "easy"})
         target_diff = dim_state["level"]
 
