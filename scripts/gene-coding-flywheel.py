@@ -739,6 +739,7 @@ def search_builtin_patterns(task_description):
         "di容器|依赖注入|ioc|注入容器|自动注入|inversion of control": "di_container_pattern",
         "actor|actor模型|消息传递|状态隔离|并发actor": "actor_model_pattern",
         "管道|pipeline|过滤器|filter|数据流|处理链": "pipeline_filter_pattern",
+        "rpc|远程调用|服务注册|服务发现|请求响应|grpc|proto|序列化|jsonrpc|微服务通信": "rpc_framework",
         "attention|注意力机制|scaled dot-product|softmax attention|query key value|多头注意|self-attention|transformer|QK|d_k|num_heads": "attention_scaled_dot_product",
         "OOM|内存泄漏|内存泄露|gc|垃圾回收|垃圾收集|tracemalloc|内存溢出|memory leak|memory profiler|堆内存|heap|大对象": "memory_leak_debug",
         "weakref|弱引用|循环引用|circular reference": "weakref_pattern",
