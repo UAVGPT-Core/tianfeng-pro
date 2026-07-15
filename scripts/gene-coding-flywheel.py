@@ -727,7 +727,7 @@ def extract_coding_genes(task_description):
 
 def search_builtin_patterns(task_description):
     """内置模式fallback：当LGE不可达时从26套内置模式匹配关键词"""
-    if not _HAS_BUILTIN:
+    if not BUILTIN_PATTERNS:
         return []
     
     matched = []
