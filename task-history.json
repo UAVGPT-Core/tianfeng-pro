@@ -108,18 +108,6 @@
     "error": ""
   },
   {
-    "task_id": "2b5188a3",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "2e0897cd",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
     "task_id": "3273cd1f",
     "status": "skipped",
     "output": "no_action",
@@ -2995,6 +2983,18 @@
   },
   {
     "task_id": "1f7b3922",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "2596ed58",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "2596ed58",
     "status": "skipped",
     "output": "no_action",
     "error": ""
