@@ -1103,9 +1103,11 @@ def _try_http_search(url, query, limit):
 
 
 def extract_coding_genes(task_description):
-    """基因感知: 多粒度中文关键词分解 + LGE检索"""
+    """基因感知: 多粒度中文关键词分解 + LGE检索（25s硬超时防护）"""
     results = []
-    import re
+    import re, time
+    
+    _extract_deadline = time.time() + 25  # 全局25秒硬超时，超时后让内置fallback接管
     
     # 去特殊字符
     clean = re.sub(r'[⚡·—•→★🐛🗄️🤖🔧📊🔄📦🐛]', ' ', task_description)
@@ -1130,6 +1132,10 @@ def extract_coding_genes(task_description):
                     decomposed.append(sub)  # 单个大写字母(OOM中的O也可以用)
                 elif len(sub) >= 2 and sub.isalpha():
                     decomposed.append(sub)
+        # 超时防护：直接终止搜索
+        if time.time() > _extract_deadline:
+            print("  [TIME] extract_coding_genes超时(25s)·转内置fallback", file=__import__('sys').stderr)
+            return []
     
     # ③ 合并所有候选词
     all_terms = list(dict.fromkeys(raw_words + decomposed))  # 去重保序
@@ -1143,6 +1149,9 @@ def extract_coding_genes(task_description):
         if r:
             results.extend(r)
             break  # 一个技术词搜到就够了
+        if time.time() > _extract_deadline:
+            print("  [TIME] extract_coding_genes超时(25s)·转内置fallback", file=__import__('sys').stderr)
+            return []
     
     # 再搜中文词
     if not results:
@@ -1152,6 +1161,9 @@ def extract_coding_genes(task_description):
             if r:
                 results.extend(r)
                 break
+            if time.time() > _extract_deadline:
+                print("  [TIME] extract_coding_genes超时(25s)·转内置fallback", file=__import__('sys').stderr)
+                return []
     
     # ⑤ 如果全没搜到，用泛编程fallback
     if not results:
@@ -1161,6 +1173,9 @@ def extract_coding_genes(task_description):
             if r:
                 results.extend(r)
                 break
+            if time.time() > _extract_deadline:
+                print("  [TIME] extract_coding_genes超时(25s)·转内置fallback", file=__import__('sys').stderr)
+                return []
     
     # 去重
     seen = set()
