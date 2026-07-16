@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 百度VOD
 VOD = "https://vod.bj.baidubce.com/v3/chat/oc/v1/chat/completions"
-VOD_KEY = "BAIDU_VOD_KEY_REDACTED"
+VOD_KEY = os.environ.get("BAIDU_VOD_KEY", "")
 
 LGE = "http://100.116.0.29:8200"
 
