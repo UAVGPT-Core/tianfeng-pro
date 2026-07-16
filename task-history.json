@@ -1,36 +1,5 @@
 [
   {
-    "task_id": "8777dd57",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "957fee56",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "a2a8c2a1",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "b917dceb",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "1ff93654",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
     "task_id": "dddab999",
     "status": "skipped",
     "output": "no_action",
@@ -3052,5 +3021,35 @@
     "output": "/bin/sh: {type:: command not found\n",
     "error": "",
     "exit_code": 127
+  },
+  {
+    "task_id": "89994681",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "6459232c",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "6459232c",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "6459232c",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "6459232c",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
   }
 ]
