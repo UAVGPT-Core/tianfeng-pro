@@ -129,40 +129,16 @@ def lge_search(query, limit=5, gene_type=None):
     result = lge_api("/genes/search", params)
     return result.get("results", [])
 
-def lge_write(content, memory_type="semantic", source="knowledge-flywheel", tags=None,
-              retries=3):
-    """写基因到LGE, 返回gene_id或None。v3.0: TOO_SHORT自愈+重试"""
-    if not content or len(content.strip()) < 10:
-        content = (content or "") + f" | 灵龙·联邦永动闭环 v3.0 | {datetime.now(TZ).isoformat()}"
-        content = content[:2000]  # 硬截断防过长
-    
+def lge_write(content, memory_type="semantic", source="knowledge-flywheel", tags=None):
+    """写基因到LGE, 返回gene_id或None"""
     data = {
         "content": content,
         "memory_type": memory_type,
         "source": source,
         "tags": tags or ["知识飞轮", "AI灯塔"]
     }
-    
-    for i in range(retries):
-        result = lge_api("/genes/write", data, timeout=10)
-        gene_id = result.get("gene_id")
-        if gene_id:
-            return gene_id
-        # v3.0: TOO_SHORT自愈
-        err = str(result.get("detail", "") or result.get("error", ""))
-        if "TOO_SHORT" in err and i < retries - 1:
-            log(f"  ⚡ 自愈合: G-Refine TOO_SHORT → 第{i+2}次重试(加垫)")
-            data["content"] = data["content"] + f"\n[联邦永动闭环v3.0·自愈重试#{i+2}] 灵龙·七自·AI灯塔"
-        elif "TOO_SHORT" in err:
-            log(f"  ❌ G-Refine TOO_SHORT: {retries}次重试均失败 · 需人工介入")
-        else:
-            log(f"  ⚠️ LGE写入异常: {err[:80]}")
-    
-    # v3.0: 写入彻底失败 → 自感知+自愈告警
-    log(f"  🚨 联邦永动闭环v3.0·自感知告警: LGE写入{retries}次全失败")
-    bridge_send("天枢", "alarm", "flywheel-write-failed",
-                content[:100] + " | 灵龙·知识飞轮·永动闭环v3.0·自愈告警")
-    return None
+    result = lge_api("/genes/write", data, timeout=10)
+    return result.get("gene_id")
 
 def bridge_send(to_node, msg_type, topic, content):
     """向联邦桥发送消息(双桥冗余)"""
@@ -528,7 +504,7 @@ def main():
     
     # ═══ 七自·自愈合: 验证基因可搜索 ═══
     if gene_id:
-        time.sleep(1)
+        time.sleep(5)  # v2.1: 5秒等FTS5索引刷新·根治假阴性
         verify = lge_search("知识飞轮闭环", 5)  # 不带日期, 语义匹配更宽; 靠gene_id精确匹配
         found = any(gene_id in str(v) for v in [json.dumps(g) for g in verify])
         if not found:
