@@ -18,7 +18,7 @@ import urllib.request
 XIAOSHU_URL = "http://localhost:8779/chat/completions"
 LGE_URL = "http://100.116.0.29:8200"
 LGE_KEY = "lgox-gene-key-2025"
-DB_PATH = os.path.expanduser("~/lgox-ops/data/evolution.db")
+DB_PATH = os.path.expanduser("~/lgox-ops/data/xiaoshu-evolution.db")
 PERSONA_PATH = os.path.expanduser("~/lgox-ops/scripts/persona_xiaoshu.txt")
 BACKUP_DIR = os.path.expanduser("~/lgox-ops/data/persona-backups")
 BENCHMARK_FILE = os.path.expanduser("~/lgox-ops/data/benchmark-questions.json")

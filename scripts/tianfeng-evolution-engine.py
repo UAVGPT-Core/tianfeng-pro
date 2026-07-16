@@ -79,7 +79,7 @@ def vod_pro_score(question, answer):
 def ask_tianfeng(question):
     try:
         # 用tf命令
-        r = subprocess.run(["python3", str(Path.home()/"bin/tf"), question],
+        r = subprocess.run(["python3", str(Path.home()/"bin/tf"), "ask", question],
             capture_output=True, text=True, timeout=60)
         return r.stdout.strip()[:500]
     except:

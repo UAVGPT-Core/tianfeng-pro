@@ -35,18 +35,23 @@ RED_LINES = [
     ("伪精准", ["精确预测","保证收益","稳赚不赔","包赚"], []),
 ]
 
-# ═══ 评分解析 v2 ═══
+# ═══ 评分解析 v3 (v2+六维兼容) ═══
 def parse_score(raw):
-    """健壮JSON提取·处理markdown/嵌套"""
+    """健壮JSON提取·六维分项自动计算total"""
     import re
-    if isinstance(raw, dict): return raw.get("total", 5), raw
+    if isinstance(raw, dict):
+        total = raw.get("total", 0)
+        if total == 0:
+            # 六维分项→计算total
+            dims = ["accuracy","completeness","freshness","professionalism","practicality","safety"]
+            vals = [raw.get(d, 0) for d in dims]
+            total = sum(vals) / len(vals) if any(v > 0 for v in vals) else 5
+        return total, raw
     text = str(raw)
-    # 去除markdown代码块
     text = re.sub(r'```(?:json)?\s*', '', text)
-    # 找最外层JSON  
     for pattern in [
-        r'\{[^{}]*"total"\s*:\s*[\d.]+\s*[,}][^{}]*\}',  # 简单
-        r'\{.*?"total"\s*:\s*[\d.]+.*?\}',  # 贪婪
+        r'\{[^{}]*"total"\s*:\s*[\d.]+\s*[,}][^{}]*\}',
+        r'\{.*?"total"\s*:\s*[\d.]+.*?\}',
     ]:
         m = re.search(pattern, text, re.DOTALL)
         if m:
