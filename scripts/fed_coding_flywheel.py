@@ -26,6 +26,22 @@ FED_DB = HOME / "lgox-ops/data/fed-coding-flywheel.db"
 # 联邦节点能力矩阵
 # ══════════════════════════════════════════
 
+def _bridge_health(host, port=8765, timeout=3):
+    """HTTP桥健康检查——先/messages/health再/health fallback（兼容mini桥）"""
+    try:
+        import urllib.request
+        for endpoint in ['/messages/health', '/health']:
+            try:
+                r = urllib.request.urlopen(f"http://{host}:{port}{endpoint}", timeout=timeout)
+                data = json.loads(r.read())
+                if data.get("status") == "ok" or ("error" not in data and "status" not in data):
+                    return True
+            except:
+                continue
+        return False
+    except:
+        return False
+
 NODE_CAPABILITIES = {
     "tiangong_gpu": {
         "name": "天工GPU",
@@ -33,7 +49,7 @@ NODE_CAPABILITIES = {
         "ssh": "dgx1",
         "capabilities": ["大模型推理", "代码生成", "视觉处理", "数学计算", "Ollama本地推理"],
         "cost": 0, "latency": "medium",
-        "health_check": lambda: _ping("100.118.207.31"),
+        "health_check": lambda: _bridge_health("100.118.207.31") or _ping("100.118.207.31"),
     },
     "dishu_neo4j": {
         "name": "地枢图谱",
@@ -41,7 +57,7 @@ NODE_CAPABILITIES = {
         "ssh": "dgx2",
         "capabilities": ["知识检索", "基因关联", "图算法", "模式匹配"],
         "cost": 0, "latency": "low",
-        "health_check": lambda: _ping("100.116.0.29"),
+        "health_check": lambda: _bridge_health("100.116.0.29") or _ping("100.116.0.29"),
     },
     "local_m4": {
         "name": "灵龙M4",
