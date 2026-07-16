@@ -15,9 +15,9 @@ import agent_memory as mem
 app = FastAPI(title="LGOX联邦超级智能体 v2.0", version="2.0")
 
 TX_URL = "http://127.0.0.1:8778/chat"
-XS_URL = "http://127.0.0.1:8779/chat"
+XS_URL = "http://127.0.0.1:8773/chat"
 BRIDGE_URL = "http://127.0.0.1:8765"
-LGE_URL = "http://100.116.0.29:8200/genes/search"
+LGE_URL = "http://127.0.0.1:8210/genes/search"
 
 EVIDENCE_CACHE = {}
 CACHE_TTL = 300
@@ -128,9 +128,9 @@ def health_check():
     """多路健康探测"""
     status = {"tx": False, "xs": False, "bridge": False, "lge": False}
     for name, url in [("tx","http://127.0.0.1:8778/health"),
-                      ("xs","http://127.0.0.1:8779/health"),
+                      ("xs","http://127.0.0.1:8773/health"),
                       ("bridge","http://127.0.0.1:8765/health"),
-                      ("lge","http://100.116.0.29:8200/health")]:
+                       ("lge","http://127.0.0.1:8210/health")]:
         try:
             urllib.request.urlopen(url, timeout=3)
             status[name] = True
