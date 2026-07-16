@@ -1,0 +1,23 @@
+# LGOX AI Box Engine — Rust → WASM
+# 2035-grade · 三元量化兼容 · 零依赖 · 边缘推理
+
+[package]
+name = "lgox-ai-box"
+version = "0.1.0"
+edition = "2024"
+description = "LGOX联邦 AI Box 边缘推理引擎 · Rust→WASM · 2035视角"
+license = "Apache-2.0"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+# 轻量嵌入推理 (ternlight核心逻辑复现)
+# 不依赖ndarray/tch — 纯加减法SIMD
+
+[profile.release]
+opt-level = "s"    # 最小体积
+lto = true
+codegen-units = 1
+strip = true
