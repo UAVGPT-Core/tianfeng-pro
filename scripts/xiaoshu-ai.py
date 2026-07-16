@@ -320,71 +320,84 @@ async def chat(request: Request):
             target_symbol = stock_codes[0] if stock_codes else ""
             target_name = stock_names[0] if stock_names else ""
             
-            if is_ai_q:
-                # 四大师AI分析
+            # ★ 不管什么类型的查询,先拿TickDB实时行情 ★
+            # ★ 铁律:注入的数据必须标明来源,LLM不能补填没有的字段 ★
+            tickdb_data = None
+            try:
+                req = urllib.request.Request("https://stock.uavgpt.com/tickdb-quote.json")
+                resp = urllib.request.urlopen(req, timeout=5)
+                tickdb_data = json.loads(resp.read())
+            except: pass
+            
+            # 只展示TickDB真实返回的字段(无盘口/无K线/无RSI)
+            matched_quotes = []
+            if tickdb_data:
+                for item in tickdb_data.get("data", []):
+                    sym = item["symbol"]
+                    name = item.get("name", "")
+                    if (target_symbol and target_symbol.upper() in sym.upper()) or \
+                       (target_name and target_name.lower() in name.lower()) or \
+                       any(n.lower() in question.lower() for n in [name.lower(), sym.split('.')[0].lower()]):
+                        matched_quotes.append(item)
+            
+            if not matched_quotes and tickdb_data:
+                matched_quotes = tickdb_data.get("data", [])[:3]
+            
+            market_lines = []
+            for item in matched_quotes:
+                sym = item["symbol"]
+                name = item.get("name", sym)
+                price = item.get("last_price", "?")
+                chg = item.get("price_change_percent_24h", "0")
+                high = item.get("high_24h", "?")
+                low = item.get("low_24h", "?")
+                vol = item.get("volume_24h", "0")
+                # 只注入真实字段! 不包含:盘口/K线/RSI/MACD(这些LLM会编造)
+                market_lines.append(f"  {name}({sym}): ${price} | 涨跌{chg}% | 高{high} 低{low} | 量{vol}")
+            
+            if market_lines:
+                market_context = (
+                    "\n\n【实时行情·TickDB(仅含真实报价字段)】\n"
+                    + "\n".join(market_lines) +
+                    "\n"
+                    "【铁律】以上是TickDB返回的所有可用字段。"
+                    "没有盘口数据、没有K线数据、没有RSI/MACD等指标数据。"
+                    "不准编造这些数据。只说有的,不说没有的。\n"
+                )
+                
+                # 对每个查询都用VOD做一句话AI解读(快速实时)
+                try:
+                    decode_name = target_name or (matched_quotes[0].get("name","") if matched_quotes else question[:10])
+                    insight_prompt = f"{decode_name}行情:{market_lines[0][:100]},用一句话总结(15字内)"
+                    ins_req = urllib.request.Request(VOD_URL,
+                        data=json.dumps({"model":"deepseek-v4-flash","messages":[
+                            {"role":"system","content":"小枢超超极AI·精准总结·不超过15字·只说事实"},
+                            {"role":"user","content":insight_prompt}
+                        ],"max_tokens":32,"temperature":0.1}).encode(),
+                        headers={"Content-Type":"application/json","Authorization":"Bearer "+VOD_KEY})
+                    ins_resp = urllib.request.urlopen(ins_req, timeout=10)
+                    insight = json.loads(ins_resp.read()).get("choices",[{}])[0].get("message",{}).get("content","")
+                    if insight: market_context += f"🧠 小枢解读: {insight.strip()}\n"
+                except: pass
+            
+            # ★ 四大师分析(如果需要,不阻塞实时行情) ★
+            if is_ai_q or (stock_codes and "分析" in question):
                 try:
                     proc = await asyncio.create_subprocess_exec(
                         "python3", os.path.expanduser("~/lgox-ops/scripts/xiaoshu-multi-agent.py"),
-                        target_symbol, target_name or target_symbol,
+                        target_symbol or matched_quotes[0]["symbol"].split(".")[0] if matched_quotes else "",
+                        target_name or question[:10],
                         cwd=os.path.expanduser("~"),
                         stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-                    stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=120)
-                    market_context = f"\n\n【四大师对抗分析·{target_name or target_symbol}】\n{stdout.decode().strip()}\n"
+                    try:
+                        sout, _ = await asyncio.wait_for(proc.communicate(), timeout=90)
+                        ai_text = sout.decode().strip()
+                        if ai_text:
+                            market_context += f"\n\n【四大师对抗分析】\n{ai_text}\n"
+                    except asyncio.TimeoutError:
+                        proc.kill()
+                        market_context += "\n\n【四大师分析已触发·结果稍后可用】\n"
                 except: pass
-            
-            elif is_market_q:
-                # 行情数据:从天枢公网读tickdb-quote.json
-                try:
-                    req = urllib.request.Request("https://stock.uavgpt.com/tickdb-quote.json")
-                    resp = urllib.request.urlopen(req, timeout=5)
-                    td = json.loads(resp.read())
-                    lines = []
-                    for item in td.get("data", []):
-                        name = item.get("name", item["symbol"])
-                        price = item.get("last_price","?")
-                        chg = item.get("price_change_percent_24h","0")
-                        high = item.get("high_24h","?")
-                        low = item.get("low_24h","?")
-                        lines.append(f"  {name}({item['symbol']}): ${price} | {chg}% | 高:{high} 低:{low}")
-                    if lines:
-                        market_context = f"\n\n【实时行情·TickDB】\n" + "\n".join(lines) + "\n"
-                except: pass
-            
-            elif is_signal_q:
-                # 信号数据
-                try:
-                    req = urllib.request.Request("https://stock.uavgpt.com/signals-v2.json")
-                    resp = urllib.request.urlopen(req, timeout=5)
-                    sigs = json.loads(resp.read())
-                    top = sorted(sigs[:20], key=lambda s: abs(s.get("composite_score",50)-50), reverse=True)[:5]
-                    lines = []
-                    for s in top:
-                        name = s.get("name", s.get("ts_code",""))
-                        score = s.get("composite_score", 50)
-                        sig_t = s.get("signal_type", "中性")
-                        price = s.get("current_price", 0)
-                        lines.append(f"  {name}: {sig_t}({score}) ¥{price}")
-                    if lines:
-                        market_context = f"\n\n【信号扫描】\n" + "\n".join(lines) + "\n"
-                except: pass
-            
-            if market_context:
-                # 使用VOD做高品质AI解读(非Flash是Pro级别)
-                try:
-                    vod_key = VOD_KEY or ""
-                    decode = (target_name or target_symbol or "")
-                    insight_prompt = f"基于以下{decode}行情/信号数据,用一句话简洁总结(20字内):\n{market_context[:500]}"
-                    ins_req = urllib.request.Request(VOD_URL,
-                        data=json.dumps({"model":"deepseek-v4-flash","messages":[
-                            {"role":"system","content":"小枢超超极AI·精准总结·不超过20字·只说事实"},
-                            {"role":"user","content":insight_prompt}
-                        ],"max_tokens":48,"temperature":0.1}).encode(),
-                        headers={"Content-Type":"application/json","Authorization":"Bearer "+vod_key})
-                    ins_resp = urllib.request.urlopen(ins_req, timeout=15)
-                    insight = json.loads(ins_resp.read()).get("choices",[{}])[0].get("message",{}).get("content","")
-                    market_context += f"\n🧠 小枢解读: {insight.strip()}\n"
-                except: pass
-        
         except Exception as e:
             market_context = ""
     
