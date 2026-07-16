@@ -1154,13 +1154,23 @@ def run_flywheel():
     # ① 感知: 检索基因（LGE三级降级 + 内置模式fallback）
     genes = extract_coding_genes(task_desc)
     
-    # 如果LGE全离线，fallback到内置模式库（BUILTIN_PATTERNS总是可用·即使import失败也由本地补充）
-    if not genes and BUILTIN_PATTERNS:
+    # 检查LGE基因是否有真正的编码模式（不含PATTERN标记=假阳性）
+    lge_has_real_pattern = any("PATTERN" in g for g in genes[:3]) if genes else False
+    lge_is_valid = genes and lge_has_real_pattern
+    
+    # 内置模式fallback（两个触发条件）:
+    #   a) LGE全离线/全空 → 直接取代
+    #   b) LGE返回假阳性（无PATTERN标记）但有更好的内置模式 → 优先用内置
+    if BUILTIN_PATTERNS:
         builtin_genes = search_builtin_patterns(task_desc)
-        if builtin_genes:
+        if not genes and builtin_genes:
+            # 条件a: LGE全空
             print(f"  [OK] LGE全离线·使用内置模式fallback → {len(builtin_genes)}条", file=sys.stderr)
             genes = builtin_genes
-            total_genes = len(genes)
+        elif genes and not lge_is_valid and builtin_genes:
+            # 条件b: LGE假阳性但内置匹配→以内置为准
+            print(f"  [OK] LGE假阳性({len(genes)}条无代码模式)·以内置模式替代({len(builtin_genes)}条)", file=sys.stderr)
+            genes = builtin_genes
     
     total_genes = len(genes)
     
