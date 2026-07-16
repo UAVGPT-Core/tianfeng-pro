@@ -42,6 +42,16 @@ def _bridge_health(host, port=8765, timeout=3):
     except:
         return False
 
+def _neo4j_health(host="100.116.0.29", port=7474, timeout=5):
+    """Neo4j HTTP健康检查——直接查7474端口而非桥8765（地枢无桥）"""
+    try:
+        import urllib.request
+        r = urllib.request.urlopen(f"http://{host}:{port}", timeout=timeout)
+        data = json.loads(r.read())
+        return "neo4j_version" in data
+    except:
+        return False
+
 NODE_CAPABILITIES = {
     "tiangong_gpu": {
         "name": "天工GPU",
@@ -57,7 +67,7 @@ NODE_CAPABILITIES = {
         "ssh": "dgx2",
         "capabilities": ["知识检索", "基因关联", "图算法", "模式匹配"],
         "cost": 0, "latency": "low",
-        "health_check": lambda: _bridge_health("100.116.0.29") or _ping("100.116.0.29"),
+        "health_check": lambda: _neo4j_health() or _ping("100.116.0.29"),
     },
     "local_m4": {
         "name": "灵龙M4",
