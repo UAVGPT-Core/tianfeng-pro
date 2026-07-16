@@ -432,7 +432,75 @@ async def gene_write(request: Request):
     except Exception as e:
         return JSONResponse({"status":"error","error":str(e)[:100]}, status_code=502)
 
-# ═══ 自进化触发 ═══
+# ═══ 多Agent对抗分析 ═══
+@app.get("/api/ai-berkshire/analyze")
+async def ai_berkshire_analyze(symbol: str = "", stock_name: str = ""):
+    """多Agent对抗分析 - AI Berkshire模式
+    4大师并行: 段永平/巴菲特/芒格/李录 → Team Lead综合 → 强制结论
+    """
+    if not symbol: return JSONResponse({"error":"需要symbol参数"}, status_code=400)
+    if not stock_name: stock_name = symbol
+
+    import subprocess, json
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "python3", os.path.expanduser("~/lgox-ops/scripts/xiaoshu-multi-agent.py"),
+            symbol, stock_name,
+            cwd=os.path.expanduser("~"),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        try:
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
+        except asyncio.TimeoutError:
+            proc.kill()
+            return JSONResponse({"error":"分析超时","symbol":symbol}, status_code=504)
+
+        if proc.returncode != 0:
+            return JSONResponse({"error":"分析失败","detail":stderr.decode()[:200]}, status_code=502)
+
+        output = stdout.decode().strip()
+        # 解析输出中的评分和结论
+        lines = output.split("\n")
+        masters = []
+        composite_score = 0
+        final_conclusion = ""
+        price_advice = ""
+        
+        for line in lines:
+            if "综合评分" in line:
+                try: composite_score = float(line.split(":")[-1].strip().replace("/5",""))
+                except: pass
+            elif "结论" in line and "价格" not in line:
+                try: final_conclusion = line.split(":")[-1].strip()
+                except: pass
+            elif "价格建议" in line or "价格区间" in line:
+                try: price_advice = line.split(":")[-1].strip()
+                except: pass
+            elif "→" in line and "/5" in line:
+                parts = line.split(":")
+                if len(parts) >= 2:
+                    master_name = parts[0].strip()
+                    rest = parts[1].strip()
+                    score = 0
+                    conclusion = ""
+                    try: score = int(rest.split("/5")[0])
+                    except: pass
+                    if "→" in rest:
+                        conclusion = rest.split("→")[-1].strip()
+                    masters.append({"master":master_name,"score":score,"conclusion":conclusion})
+
+        result = {
+            "symbol": symbol,
+            "stock_name": stock_name,
+            "composite_score": composite_score,
+            "final_conclusion": final_conclusion,
+            "masters": masters,
+            "price_advice": price_advice
+        }
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse({"error":str(e)}, status_code=500)
 @app.post("/evolve/auto")
 async def auto_evolve(request: Request):
     """自进化: 对话后自动评分→生成进化基因"""
