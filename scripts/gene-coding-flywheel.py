@@ -404,6 +404,78 @@ MEMORY_PATTERNS = {
     ],
 
     }
+# ── 字符串编码模式（2026-07-16 补: Bug修复·easy维度缺口）──
+ENCODING_PATTERNS = {
+    "string_encoding_utf8": [
+        "# PATTERN: Python字符串编码/解码 (GENE-PRO: ENCODING-UTF8-v1)",
+        "# 中英文混排编码铁律:",
+        "#  - Python3字符串=str(Unicode), 不是 bytes",
+        "#  - len()对str返回字符数(中文1字符), 对bytes返回字节数(中文3字节)",
+        "#  - 截断时用 str[:n] 按字符截断, 不要按字节截断!",
+        "#  - encode('utf-8') 得到bytes, decode('utf-8') 得到str",
+        "#",
+        "# 常见Bug场景:",
+        "#  - b'中文'[:3] 只截到半个中文字符 → UnicodeDecodeError",
+        "#  - 数据库字段长度按字节定义 → 超长截断会破坏UTF-8序列",
+        "#  - JSON序列化时 ensure_ascii=False 保留中文",
+        "#",
+        "# 安全截断模板:",
+        "def safe_truncate(text, max_chars):",
+        "    \"\"\"按字符数安全截断字符串(不破坏UTF-8)\"\"\"",
+        "    return text[:max_chars] if isinstance(text, str) else text",
+        "",
+        "def safe_byte_truncate(text, max_bytes):",
+        "    \"\"\"按字节数安全截断(不破坏UTF-8序列)\"\"\"",
+        "    encoded = text.encode('utf-8')",
+        "    if len(encoded) <= max_bytes:",
+        "        return text",
+        "    # 从max_bytes往回找, 直到不在多字节序列中部",
+        "    while max_bytes > 0 and (encoded[max_bytes] & 0xC0) == 0x80:",
+        "        max_bytes -= 1",
+        "    return encoded[:max_bytes].decode('utf-8')",
+        "",
+        "# 编码修复:",
+        "def fix_mojibake(text, src_encoding='latin-1', dst_encoding='utf-8'):",
+        "    \"\"\"修复乱码: 先用错误编码解成bytes, 再重新decode\"\"\"",
+        "    if isinstance(text, str):",
+        "        text = text.encode(dst_encoding, errors='replace')",
+        "    return text.decode(src_encoding, errors='replace')",
+    ],
+    "json_encoding_safe": [
+        "# PATTERN: JSON安全序列化 (GENE-PRO: JSON-ENCODING-v1)",
+        "import json",
+        "",
+        "# 中文字符不转义:",
+        "json.dumps(data, ensure_ascii=False)  # 保留中文和Unicode字符",
+        "",
+        "# bytes字段处理:",
+        "class BytesEncoder(json.JSONEncoder):",
+        "    def default(self, obj):",
+        "        if isinstance(obj, bytes):",
+        "            return obj.decode('utf-8', errors='replace')",
+        "        return super().default(obj)",
+        "",
+        "# 大JSON流式写入:",
+        "def write_json_stream(items, filepath):",
+        "    with open(filepath, 'w', encoding='utf-8') as f:",
+        "        f.write('[')",
+        "        for i, item in enumerate(items):",
+        "            if i > 0: f.write(',')",
+        "            f.write(json.dumps(item, ensure_ascii=False))",
+        "        f.write(']')",
+    ],
+    "str_bytes_mismatch": [
+        "# PATTERN: 字符串/字节串混用修复 (GENE-PRO: STR-BYTES-v1)",
+        "# 排查チェックリスト:",
+        "#  □ 所有open()指定encoding='utf-8'",
+        "#  □ API返回值: resp.text (str) vs resp.content (bytes)",
+        "#  □ 数据库: str存Unicode, bytes存BLOB",
+        "#  □ 文件读写: 'r' vs 'rb' / 'w' vs 'wb'",
+        "#  □ 正则: re.match(r'pattern', text) 需要str不是bytes",
+        "#  □ hashlib: sha256(data.encode()) 输入必须bytes",
+        "#  □ HTTP头: headers中的值必须是str不能是bytes",
+    ],
+}
 ALGORITHM_PATTERNS = {
     "two_pointer_pattern": [
         "# PATTERN: 双指针算法 (GENE-SEM-567ac54412f3bc58 接雨水)",
@@ -834,6 +906,7 @@ BUILTIN_PATTERNS.update(ALGORITHM_PATTERNS)
 BUILTIN_PATTERNS.update(MEMORY_PATTERNS)
 BUILTIN_PATTERNS.update(_ATTENTION_PATTERNS)
 BUILTIN_PATTERNS.update(SYSTEM_DESIGN_PATTERNS)
+BUILTIN_PATTERNS.update(ENCODING_PATTERNS)
 
 # LGE基因库集群（三级降级: 地枢主库→天枢LGE→灵龙LGA本地）
 LGE_POOL = [
@@ -1135,6 +1208,9 @@ def search_builtin_patterns(task_description):
         "tracemalloc|内存追踪|memory trace|内存分配|对象分配|对象大小": "tracemalloc_pattern",
         "内存监控|监控内存|memory usage|rss|mem_usage|内存使用|psutil": "mem_usage_monitor",
         "对象存储|块存储|分块上传|断点续传|chunk|upload_id|resume|storage backend|object storage|storage engine": "object_storage_pattern",
+        "编码|字符串|encode|decode|unicode|utf|gbk|乱码|中英文|混排|截断|mojibake|byte|bytes|charset|字符集": "string_encoding_utf8",
+        "json.*中文|json.*unicode|序列化.*中文|中文.*json|ensure_ascii": "json_encoding_safe",
+        "str.*bytes|bytes.*str|字符串.*字节|类型不匹配|类型错误.*编码": "str_bytes_mismatch",
     }
     
     for pattern, pattern_name in keyword_map.items():
