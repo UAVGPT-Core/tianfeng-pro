@@ -902,11 +902,34 @@ SYSTEM_DESIGN_PATTERNS = {
         "            finally: self.release()",
     ],
 }
+# ── 联邦关键fallback模式（import失败时确保keyword_map能找到这些pattern name）──
+FALLBACK_PATTERNS = {
+    "async_pattern": [
+        "# PATTERN: 异步并发+限流 (GENE-PRO-d9e3b2c4)",
+        "async with asyncio.Semaphore(MAX_CONCURRENT):",
+        "    async with aiohttp.ClientSession() as session:",
+        "        tasks = [fetch(session, url) for url in urls]",
+        "        results = await asyncio.gather(*tasks, return_exceptions=True)",
+    ],
+    "error_handling": [
+        "# PATTERN: 三层错误处理 (GENE-PRO-c8f2a1b3)",
+        "try:",
+        "    result = await operation()",
+        "except asyncio.TimeoutError:",
+        "    result = fallback_cache()",
+        "except Exception as e:",
+        "    logger.error(f'{operation.__name__} failed: {e}')",
+        "    raise ServiceError from e",
+        "finally:",
+        "    metrics.record(operation.__name__, result)",
+    ],
+}
 BUILTIN_PATTERNS.update(ALGORITHM_PATTERNS)
 BUILTIN_PATTERNS.update(MEMORY_PATTERNS)
 BUILTIN_PATTERNS.update(_ATTENTION_PATTERNS)
 BUILTIN_PATTERNS.update(SYSTEM_DESIGN_PATTERNS)
 BUILTIN_PATTERNS.update(ENCODING_PATTERNS)
+BUILTIN_PATTERNS.update(FALLBACK_PATTERNS)  # 确保import失败时也有基础fallback
 
 # LGE基因库集群（三级降级: 地枢主库→天枢LGE→灵龙LGA本地）
 LGE_POOL = [
