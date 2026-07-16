@@ -935,7 +935,8 @@ BUILTIN_PATTERNS.update(FALLBACK_PATTERNS)  # 确保import失败时也有基础f
 LGE_POOL = [
     "http://100.116.0.29:8200",   # 【主】地枢DGX2（791K基因）
     "http://100.100.89.2:8201",   # 【备1】天枢LGE Studio（829基因）
-    "http://127.0.0.1:8202",      # 【备2】灵龙LGA本地代理（33基因）
+    "http://127.0.0.1:8210",      # 【备2】灵龙LGE镜像（644K基因·GET API）
+    "http://127.0.0.1:8202",      # 【备3】灵龙LGA本地代理（35基因）
 ]
 LGE_URL = "http://100.116.0.29:8200"
 FTS5_DB = HOME / "lge-studio/data/lge_fts.db"  # 不存在于灵龙，仅在天枢
@@ -1060,7 +1061,9 @@ def search_lge(query, limit=5):
 
 
 def _try_http_search(url, query, limit):
-    """直接HTTP搜索LGE节点"""
+    """直接HTTP搜索LGE节点（POST优先·405时回退GET）"""
+    from urllib.error import HTTPError
+    import urllib.parse as url_parse
     try:
         data = json.dumps({"query": query, "n_results": limit}).encode()
         req = urllib.request.Request(url + "/genes/search", data=data,
@@ -1072,9 +1075,26 @@ def _try_http_search(url, query, limit):
             print(f"  [OK] search_lge({url}) → {len(results)}条", file=__import__('sys').stderr)
             return results
         _connectivity_cache[url] = True
-    except urllib.error.HTTPError as e:
-        print(f"  [WARN] {url} HTTP {e.code}", file=__import__('sys').stderr)
-        if e.code == 500:
+    except HTTPError as e:
+        if e.code == 405:
+            # 尝试GET（镜像节点如127.0.0.1:8210使用GET API）
+            get_url = f"{url}/genes/search?q={url_parse.quote(query)}&limit={limit}"
+            try:
+                get_resp = urllib.request.urlopen(get_url, timeout=5)
+                get_data = json.loads(get_resp.read())
+                get_results = [r.get("content", "") for r in get_data.get("results", [])]
+                if get_results:
+                    _connectivity_cache[url] = True
+                    print(f"  [OK] search_lge({url}·GET) → {len(get_results)}条", file=__import__('sys').stderr)
+                    return get_results
+                _connectivity_cache[url] = True
+            except Exception as get_e:
+                print(f"  [WARN] {url} GET也失败: {str(get_e)[:40]}", file=__import__('sys').stderr)
+                _connectivity_cache[url] = False
+        elif e.code == 500:
+            _connectivity_cache[url] = False
+        else:
+            print(f"  [WARN] {url} HTTP {e.code}", file=__import__('sys').stderr)
             _connectivity_cache[url] = False
     except Exception as e:
         print(f"  [WARN] {url}不可达: {str(e)[:40]}", file=__import__('sys').stderr)
