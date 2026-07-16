@@ -6,6 +6,19 @@ Cron invoked (no_agent mode) — standalone script, no hermes_tools dependency.
 
 从灵龙SSH到地枢DGX2 → 13条Cypher查询 → LGE健康 → 写入graph-data.json
 目标: /Users/a112233/.hermes/data/graph-data.json
+服务: g-refine-status.py:8770 → /api/graph-data
+
+特征:
+- SSH别名抗缺失: 直连IP 100.116.0.29
+- Neo4j容器自动重启恢复
+- cypher-shell CSV格式解析(无DictReader陷阱)
+- Top基因噪音过滤 (CJK宽门+窄门 → 稳定7条)
+- 列名前缀剥离 (p.name→name, l.name→name等)
+- 时间戳防双时区
+- 保留已有 top_fitness_genes 字段
+
+部署路径: /Users/a112233/lgox-ops/scripts/neo4j-lge-sync.py
+Cron任务: 6ddff9cbcc58 (Hermes, every 60m, no_agent=true)
 """
 
 import subprocess
@@ -22,6 +35,7 @@ SSH = ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=15", "dgx2
 DATA_PATH = os.path.expanduser("~/.hermes/data/graph-data.json")
 
 def run(cmd, timeout=30):
+    """Run a command and return stdout as string."""
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         return r.stdout
@@ -32,9 +46,11 @@ def run(cmd, timeout=30):
         return ""
 
 def ssh(cmd_str, timeout=30):
+    """Run a command on dgx2 via SSH."""
     return run(SSH + [cmd_str], timeout=timeout)
 
 def cypher(query, timeout=30):
+    """Run a Cypher query via cypher-shell on dgx2. Escapes single quotes."""
     safe = query.replace("'", "'\\''")
     return ssh(f"docker exec neo4j cypher-shell -u neo4j -p lgox2026 '{safe}'", timeout=timeout)
 
@@ -70,11 +86,13 @@ queries = {
     "federation_edges":"MATCH (a)-[f:FEDERATED_WITH]->(b) RETURN a.name AS from_node, b.name AS to_node",
 }
 
+# Critical queries (retry on empty)
 CRITICAL = {"total_nodes", "gene_count", "labels"}
 
 results = {}
 for key, q in queries.items():
     results[key] = cypher(q)
+    # Retry critical queries if empty (up to 2 retries)
     if key in CRITICAL:
         for attempt in range(2):
             if results[key] and len(results[key]) > 5:
@@ -84,7 +102,7 @@ for key, q in queries.items():
             results[key] = cypher(q)
     print(f"[1] {key}: {len(results[key])} chars")
 
-# ── 2. LGE health ──
+# ── 2. LGE health (🔴 不要加 -H "X-LGE-Key:..." — LGE v2.0 会返回 genes=0)
 lge_raw = ssh(
     'curl -sf --max-time 10 http://127.0.0.1:8200/health',
     timeout=15
@@ -280,10 +298,11 @@ print(f"   path={DATA_PATH}")
 # ── 10. SCP to 天枢 (公网数据流关键) ──
 TIANSHU_PATH = "/Users/a1/.hermes/data/graph-data.json"
 r = subprocess.run(["scp", "-o", "ConnectTimeout=10", DATA_PATH, f"tianshu:{TIANSHU_PATH}"],
-    capture_output=True, text=True, timeout=20)
-print(f"[SCP] to tianshu: rc={r.returncode}")
+                   capture_output=True, text=True, timeout=30)
+scp_rc = r.returncode
+print(f"[SCP] to tianshu: exit={scp_rc}")
 
-# ── 11. Verify local :8770 + :8799 ──
+# ── 11. Verify local :8770 + :8799 (graph_data_server may be killed) ──
 for port in [8770, 8799]:
     try:
         req = urllib.request.urlopen(f"http://127.0.0.1:{port}/api/graph-data", timeout=5)
@@ -292,12 +311,22 @@ for port in [8770, 8799]:
     except Exception as e:
         print(f"[API:{port}] error: {e}")
 
-# ── 12. Verify public endpoint ──
+# ── 12. Verify public endpoint (stock.uavgpt.com) ──
 try:
     req = urllib.request.urlopen(f"https://stock.uavgpt.com/api/graph-data?v={int(time.time())}", timeout=10)
     v = json.loads(req.read())
     print(f"[API-public] nodes={v.get('total_nodes')}, ts={v.get('timestamp','?')[:19]}, lge={v.get('lge_total_genes','?')}")
 except Exception as e:
     print(f"[API-public] error: {e}")
+
+# ── 13. Verify tianshu file ──
+try:
+    r = subprocess.run(
+        ["ssh", "-o", "ConnectTimeout=8", "tianshu",
+         "head -3 /Users/a1/.hermes/data/graph-data.json"],
+        capture_output=True, text=True, timeout=15)
+    print(f"[TIANSHU-file] arrived={len(r.stdout)>50}, preview={r.stdout[:120].strip()}")
+except Exception as e:
+    print(f"[TIANSHU-file] error: {e}")
 
 print("\n✅ SYNC COMPLETE")
