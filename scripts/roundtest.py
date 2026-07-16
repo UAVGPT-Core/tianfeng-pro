@@ -82,7 +82,7 @@ def heal(service, port):
     subprocess.run(["launchctl", "unload", f"/Users/a112233/Library/LaunchAgents/com.lgox.{service}-ai.plist"],
                    capture_output=True)
     subprocess.run(["kill", "-9"] + 
-                   subprocess.run(["lsof","-ti",f":{port}"], capture_output=True, text=True).stdout.strip().split(),
+                   subprocess.run(["/usr/sbin/lsof","-ti",f":{port}"], capture_output=True, text=True).stdout.strip().split(),
                    capture_output=True)
     time.sleep(2)
     subprocess.run(["launchctl", "load", f"/Users/a112233/Library/LaunchAgents/com.lgox.{service}-ai.plist"],
