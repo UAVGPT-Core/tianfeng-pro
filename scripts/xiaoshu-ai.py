@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-小枢独立AI服务 v3.5 — LGOX联邦第9节点·金融AI
+小枢独立AI服务 v3.6 — LGOX联邦第9节点·金融AI
 部署: 灵龙 :8779 | launchd保活
 模型: DeepSeek V4 Flash | 证据链: 8769统一查询
-v5.0v3.5: 动态基因数·GCP宪法·FCPF v5.1·WidgetSpec v1.0·金字塔v7.82·零硬编码
+v5.0v3.6: 动态基因数·GCP宪法·FCPF v5.1·WidgetSpec v1.0·金字塔v7.82·零硬编码
 """
 import json, os, time, urllib.request, asyncio
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 import uvicorn
 
-app = FastAPI(title="小枢·LGOX联邦金融AI", version="v3.5")
+app = FastAPI(title="小枢·LGOX联邦金融AI", version="v3.6")
 
 
 DEEPSEEK_KEY = os.getenv("DEEPSEEK_API_KEY", "")
@@ -224,7 +224,7 @@ async def call_deepseek(messages: list, max_tokens: int = 500) -> dict:
         raise RuntimeError("小枢·多路LLM全失败")
 
 
-# ═══ 流式SSE引擎 v3.5 ═══
+# ═══ 流式SSE引擎 v3.6 ═══
 import http.client, ssl
 
 def _deepseek_stream_sync(messages: list, max_tokens: int = 500):
@@ -313,7 +313,7 @@ async def chat(request: Request):
         }, status_code=503)
     latency = int((time.time() - t0) * 1000)
     
-    # v3.5 自进化: 高质回答自动纳基因(≥150字·有证据·非闲聊)
+    # v3.6 自进化: 高质回答自动纳基因(≥150字·有证据·非闲聊)
     gene_id = ""
     if len(answer) > 150 and evidence and "抱歉" not in answer[:50] and "基因库中未检索到" not in answer[:50]:
         try:
@@ -345,7 +345,7 @@ async def chat(request: Request):
         "evidence_count": len(evidence.split("\n")) if evidence else 0,
         "evidence": evidence[:500] if evidence else "",
         "tokens": tokens, "latency_ms": latency,
-        "model": "deepseek-v4-flash", "version": "v3.5",
+        "model": "deepseek-v4-flash", "version": "v3.6",
         "gene_id": gene_id, "quality": quality
     })
 
@@ -375,11 +375,11 @@ async def openai_chat(request: Request):
     return JSONResponse({
         "id":f"chatcmpl-xs-{int(time.time())}","object":"chat.completion","model":"deepseek-v4-flash",
         "choices":[{"index":0,"message":{"role":"assistant","content":answer},"finish_reason":"stop"}],
-        "lgox_meta":{"channel":"小枢","version":"v3.5","gcp_widget_spec":"1.0","widget_spec":['relative-url', 'golden-master', 'dual-domain', 'gene-feedback', 'identity-guard', 'cors-native'],"gene_count":live_gene_wan()}
+        "lgox_meta":{"channel":"小枢","version":"v3.6","gcp_widget_spec":"1.0","widget_spec":['relative-url', 'golden-master', 'dual-domain', 'gene-feedback', 'identity-guard', 'cors-native'],"gene_count":live_gene_wan()}
     })
 
 
-# ═══ SSE流式端点 v3.5 ═══
+# ═══ SSE流式端点 v3.6 ═══
 @app.post("/chat/stream")
 async def chat_stream(request: Request):
     """SSE流式对话·首token<0.5s·逐字实时输出"""
@@ -544,7 +544,7 @@ async def health():
     return {
         "status": "ok", "service": "小枢·LGOX联邦第9节点",
         "node": "金融AI助手", "model": "deepseek-v4-flash",
-        "evidence": "LGE基因库(8769)", "version": "v3.5",
+        "evidence": "LGE基因库(8769)", "version": "v3.6",
         "gene_count": gn, "pyramid": PYRAMID_VER,
         "persona_hash": "782dc52b29084384",
         "gcp_widget_spec": "1.0", "widget_spec": ['relative-url', 'golden-master', 'dual-domain', 'gene-feedback', 'identity-guard', 'cors-native'],
