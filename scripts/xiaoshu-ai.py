@@ -294,11 +294,107 @@ async def chat(request: Request):
     if not question: return JSONResponse({"error": "question required"}, status_code=400)
     history = data.get("history", data.get("messages", []))
     evidence = fetch_evidence(question)
+    
+    # ═══ 超个体信号感知: 检测行情/信号关键词 ═══
+    market_context = ""
+    keywords_stock = ["行情","股价","价格","多少","涨了","跌了","报价","实时","走势","现价","最新价","怎么样","怎么","如何","多少了"]
+    keywords_signal = ["信号","推荐","机会","分析","怎么样","值得","关注","看好","看空","标的"]
+    keywords_ai = ["伯克希尔","大师分析","深度研究","多Agent","四大师"]
+    
+    # 检测是否有股票代码(6位数字)或股票名
+    import re as _re
+    stock_codes = _re.findall(r'(?:6\d{4}|0\d{4}|3\d{4})(?:\.(?:SH|SZ|HK))?', question.upper())
+    stock_names = [n for n in ["腾讯","阿里","茅台","五粮液","招商银行","恒瑞","苹果","特斯拉",
+        "小米","工商银行","建设银行","中国平安","宁德时代","比亚迪","迈瑞","贵州茅台","拼多多","京东",
+        "英伟达","NVIDIA","AMD","英特尔","微软","Meta","谷歌","亚马逊"]
+        if n in question]
+    
+    # 检测是否触发行情/信号类问题(放宽阈值:命中任一关键词就算)
+    is_market_q = any(kw in question for kw in keywords_stock) or bool(stock_codes or stock_names)
+    is_signal_q = any(kw in question for kw in keywords_signal)
+    is_ai_q = any(kw in question for kw in keywords_ai) or bool(stock_codes and "分析" in question)
+    
+    if is_market_q or is_signal_q or is_ai_q:
+        try:
+            # 确定目标股票
+            target_symbol = stock_codes[0] if stock_codes else ""
+            target_name = stock_names[0] if stock_names else ""
+            
+            if is_ai_q:
+                # 四大师AI分析
+                try:
+                    proc = await asyncio.create_subprocess_exec(
+                        "python3", os.path.expanduser("~/lgox-ops/scripts/xiaoshu-multi-agent.py"),
+                        target_symbol, target_name or target_symbol,
+                        cwd=os.path.expanduser("~"),
+                        stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                    stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=120)
+                    market_context = f"\n\n【四大师对抗分析·{target_name or target_symbol}】\n{stdout.decode().strip()}\n"
+                except: pass
+            
+            elif is_market_q:
+                # 行情数据:从天枢公网读tickdb-quote.json
+                try:
+                    req = urllib.request.Request("https://stock.uavgpt.com/tickdb-quote.json")
+                    resp = urllib.request.urlopen(req, timeout=5)
+                    td = json.loads(resp.read())
+                    lines = []
+                    for item in td.get("data", []):
+                        name = item.get("name", item["symbol"])
+                        price = item.get("last_price","?")
+                        chg = item.get("price_change_percent_24h","0")
+                        high = item.get("high_24h","?")
+                        low = item.get("low_24h","?")
+                        lines.append(f"  {name}({item['symbol']}): ${price} | {chg}% | 高:{high} 低:{low}")
+                    if lines:
+                        market_context = f"\n\n【实时行情·TickDB】\n" + "\n".join(lines) + "\n"
+                except: pass
+            
+            elif is_signal_q:
+                # 信号数据
+                try:
+                    req = urllib.request.Request("https://stock.uavgpt.com/signals-v2.json")
+                    resp = urllib.request.urlopen(req, timeout=5)
+                    sigs = json.loads(resp.read())
+                    top = sorted(sigs[:20], key=lambda s: abs(s.get("composite_score",50)-50), reverse=True)[:5]
+                    lines = []
+                    for s in top:
+                        name = s.get("name", s.get("ts_code",""))
+                        score = s.get("composite_score", 50)
+                        sig_t = s.get("signal_type", "中性")
+                        price = s.get("current_price", 0)
+                        lines.append(f"  {name}: {sig_t}({score}) ¥{price}")
+                    if lines:
+                        market_context = f"\n\n【信号扫描】\n" + "\n".join(lines) + "\n"
+                except: pass
+            
+            if market_context:
+                # 使用VOD做高品质AI解读(非Flash是Pro级别)
+                try:
+                    vod_key = VOD_KEY or ""
+                    decode = (target_name or target_symbol or "")
+                    insight_prompt = f"基于以下{decode}行情/信号数据,用一句话简洁总结(20字内):\n{market_context[:500]}"
+                    ins_req = urllib.request.Request(VOD_URL,
+                        data=json.dumps({"model":"deepseek-v4-flash","messages":[
+                            {"role":"system","content":"小枢超超极AI·精准总结·不超过20字·只说事实"},
+                            {"role":"user","content":insight_prompt}
+                        ],"max_tokens":48,"temperature":0.1}).encode(),
+                        headers={"Content-Type":"application/json","Authorization":"Bearer "+vod_key})
+                    ins_resp = urllib.request.urlopen(ins_req, timeout=15)
+                    insight = json.loads(ins_resp.read()).get("choices",[{}])[0].get("message",{}).get("content","")
+                    market_context += f"\n🧠 小枢解读: {insight.strip()}\n"
+                except: pass
+        
+        except Exception as e:
+            market_context = ""
+    
     system_msg = build_system_prompt()
     if evidence:
         system_msg += f"\n\n【证据链·LGE基因库】\n{evidence}\n\n上述证据可用于回答联邦内部问题。如果是通用知识问题且证据不相关，请忽略证据，直接基于你的知识自由回答。"
     else:
         system_msg += "\n\n基因库未找到相关证据。请直接基于你的通用知识自由回答。你是DeepSeek V4模型，拥有广泛的知识储备。"
+    if market_context:
+        system_msg += market_context
     messages = [{"role": "system", "content": system_msg}]
     if history: messages.extend(history[-6:])
     messages.append({"role": "user", "content": question})
