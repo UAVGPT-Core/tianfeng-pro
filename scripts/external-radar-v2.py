@@ -8,7 +8,7 @@ import urllib.request, json, time, os, xml.etree.ElementTree as ET
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-LGE = 'http://100.116.0.29:8200'
+LGE = 'http://127.0.0.1:8210'
 LGE_KEY = 'lgox-gene-key-2025'
 BRIDGE = 'http://127.0.0.1:8765'
 TIMEOUT = 30  # 10→30秒
@@ -30,6 +30,8 @@ def write_gene(content, source, tags):
         r = json.loads(urllib.request.urlopen(req, timeout=TIMEOUT).read())
         if r.get('gene_id'):
             return r['gene_id']
+        if r.get('written', {}).get('local'):
+            return 'local-write-ok'
     except Exception as e:
         # 重试一次
         try:
@@ -39,6 +41,8 @@ def write_gene(content, source, tags):
             r = json.loads(urllib.request.urlopen(req, timeout=TIMEOUT).read())
             if r.get('gene_id'):
                 return r['gene_id']
+            if r.get('written', {}).get('local'):
+                return 'local-write-ok'
         except:
             pass
     return None
