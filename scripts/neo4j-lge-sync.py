@@ -297,9 +297,7 @@ print(f"   path={DATA_PATH}")
 
 # ── 10. SCP to 天枢 (公网数据流关键) ──
 TIANSHU_PATH = "/Users/a1/.hermes/data/graph-data.json"
-r = subprocess.run(["scp", "-o", "ConnectTimeout=10", DATA_PATH, f"tianshu:{TIANSHU_PATH}"],
-                   capture_output=True, text=True, timeout=30)
-scp_rc = r.returncode
+scp_rc = os.system(f"scp -o ConnectTimeout=10 {DATA_PATH} tianshu:{TIANSHU_PATH}")
 print(f"[SCP] to tianshu: exit={scp_rc}")
 
 # ── 11. Verify local :8770 + :8799 (graph_data_server may be killed) ──
@@ -321,11 +319,10 @@ except Exception as e:
 
 # ── 13. Verify tianshu file ──
 try:
-    r = subprocess.run(
-        ["ssh", "-o", "ConnectTimeout=8", "tianshu",
-         "head -3 /Users/a1/.hermes/data/graph-data.json"],
-        capture_output=True, text=True, timeout=15)
-    print(f"[TIANSHU-file] arrived={len(r.stdout)>50}, preview={r.stdout[:120].strip()}")
+    out = run(["ssh", "-o", "ConnectTimeout=8", "tianshu",
+        "head -3 /Users/a1/.hermes/data/graph-data.json"],
+        timeout=15)
+    print(f"[TIANSHU-file] arrived={len(out)>50}, preview={out[:120].strip()}")
 except Exception as e:
     print(f"[TIANSHU-file] error: {e}")
 
