@@ -194,16 +194,33 @@ class LGEMCPServer:
     def connect(self): return True
     def list_tools(self): return self.tools
 
-    def call_tool(self, tool_name, arguments):
+    def _lge_request(self, path, data=None, timeout=10):
+        """请求LGE，优先远程，远程不可用时降级到本地镜像"""
         import urllib.request
+        import json
+        # 先试远程
+        remote = f"http://100.116.0.29:8200{path}"
+        local = f"http://127.0.0.1:8210{path}"
+        for url, label in [(remote, "remote"), (local, "local")]:
+            try:
+                if data:
+                    req = urllib.request.Request(url, data=json.dumps(data).encode(),
+                        headers={"Content-Type": "application/json"})
+                else:
+                    req = urllib.request.Request(url)
+                resp = urllib.request.urlopen(req, timeout=timeout)
+                result = json.loads(resp.read())
+                result["_source"] = label
+                return result
+            except Exception:
+                continue
+        return {"error": "lge_unreachable", "detail": "both remote and local LGE unreachable"}
+
+    def call_tool(self, tool_name, arguments):
         if tool_name == "gene_search":
-            data = json.dumps({"query": arguments.get("query", ""), "n_results": arguments.get("n", 5)}).encode()
-            req = urllib.request.Request("http://100.116.0.29:8200/genes/search",
-                data=data, headers={"Content-Type": "application/json"})
-            return json.loads(urllib.request.urlopen(req, timeout=10).read())
+            return self._lge_request("/genes/search", data={"query": arguments.get("query", ""), "n_results": arguments.get("n", 5)}, timeout=10)
         elif tool_name == "gene_health":
-            r = urllib.request.urlopen("http://100.116.0.29:8200/health", timeout=5)
-            return json.loads(r.read())
+            return self._lge_request("/health", timeout=5)
         return {"error": "not_implemented"}
 
 
