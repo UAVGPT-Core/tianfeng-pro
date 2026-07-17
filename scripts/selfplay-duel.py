@@ -58,6 +58,7 @@ def call(url, q, timeout=20):
     d = json.dumps({"messages":[{"role":"user","content":q}],"model":"deepseek-v4-flash","stream":False}).encode()
     req = urllib.request.Request(url, data=d)
     req.add_header("Content-Type","application/json")
+    req.add_header("User-Agent","curl/8.9.1")
     t0 = time.time()
     r = json.loads(urllib.request.urlopen(req,timeout=timeout).read())
     return r["choices"][0]["message"]["content"], int((time.time()-t0)*1000)
