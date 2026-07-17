@@ -25,6 +25,7 @@ load_env()
 ZHIPU_KEY = os.environ.get("ZHIPU_API_KEY", "")
 LGE_KEY = os.environ.get("LGE_KEY", "")
 LGE_WRITE_URL = "http://100.116.0.29:8200/genes/write"
+LGE_MIRROR_URL = "http://127.0.0.1:8210/genes/write"  # 地枢离线时本地灾备接管
 
 def http_get(url, timeout=20):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 LGOX-Radar/3.0"})
@@ -208,7 +209,7 @@ def summarize_one(item):
     return item
 
 def write_one(item):
-    """Write one gene to LGE"""
+    """Write one gene to LGE — 地枢优先 → 本地镜像降级"""
     key = LGE_KEY
     summary = item.get("summary","") or item.get("text","")[:150]
     title = item.get("title","")
@@ -218,12 +219,14 @@ def write_one(item):
     content = f"# {title}\n**源**:{src}\n**链接**:{url}\n**摘要**:{summary}\n"
     payload = json.dumps({"content": content, "key": key, "fitness": 0.5}).encode()
     
-    try:
-        req = urllib.request.Request(LGE_WRITE_URL, data=payload, headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            return json.loads(resp.read()).get("status","ok")
-    except Exception as e:
-        return f"ERR:{e}"
+    for target in (LGE_WRITE_URL, LGE_MIRROR_URL):
+        try:
+            req = urllib.request.Request(target, data=payload, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                return json.loads(resp.read()).get("status","ok")
+        except Exception:
+            continue
+    return "ERR:all_targets_unreachable"
 
 def main():
     start = time.time()
