@@ -218,7 +218,7 @@ def selfplay_round():
     c.execute("INSERT INTO selfplay_results (challenge_id,score,passed) VALUES (?,?,?)",
               (cid, score, passed))
     c.execute("UPDATE auto_challenges SET used_count=used_count+1, "
-              "avg_score=(avg_score*(used_count-1)+?)/used_count WHERE id=?",
+              "avg_score=(COALESCE(avg_score,0)*(used_count-1)+?)/used_count WHERE id=?",
               (score, cid))
     
     conn.commit()
