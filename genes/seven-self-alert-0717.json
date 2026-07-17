@@ -1,0 +1,19 @@
+{
+  "cycle": "七自7/7满格",
+  "bridge_health": "5 online, 5 offline, 8 removed",
+  "confirmed_offline": [
+    "地枢(SSH超时+LGE空响应)",
+    "天锋PRO(:18001不可达)"
+  ],
+  "false_positive": [
+    "天工(SSH通+Ollama9模型正常)"
+  ],
+  "backlog": "31→1条(已消化)",
+  "online": [
+    "天枢",
+    "天玑",
+    "太一",
+    "灵龙",
+    "织网"
+  ]
+}
