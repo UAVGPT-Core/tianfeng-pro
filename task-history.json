@@ -1,19 +1,5 @@
 [
   {
-    "task_id": "ab97d7d4",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "8fd0b829",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
     "task_id": "a77a5762",
     "status": "tsf_failed",
     "output": "/bin/sh: {type:: command not found\n",
@@ -3318,6 +3304,18 @@
   },
   {
     "task_id": "fef42c63",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "19ea68ec",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "ba09f846",
     "status": "skipped",
     "output": "no_action",
     "error": ""
