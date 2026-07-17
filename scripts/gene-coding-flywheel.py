@@ -1827,6 +1827,7 @@ def search_builtin_patterns(task_description):
         "功能开关|feature|flag|开关|灰度|ab测试": "feature_flag",
         "cqrs|读写分离|命令查询|read model|write model": "cqrs_pattern",
         "事件溯源|eventsourcing|event store|domain event": "event_sourcing",
+        "线程池|thread pool|threadpool|worker pool|submit|shutdown|ThreadPoolExecutor|并发池|多线程池": "thread_pool_pattern",
         "后台|background|job|队列|任务|worker|cron|定时": "background_job",
         "优雅|shutdown|关闭|graceful|信号|signal|sigterm": "graceful_shutdown",
         "网络分区|双写|分布式|brain split|split brain|consensus|raft|paxos|一致": "circuit_breaker",
