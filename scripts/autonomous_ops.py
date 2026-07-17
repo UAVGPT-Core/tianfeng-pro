@@ -37,8 +37,12 @@ TARGETS = {
         "health": "http://100.100.89.2:8792/health",
         "type": "internal"
     },
-    "本地·LGE引擎": {
+    "地枢·LGE引擎": {
         "health": "http://100.116.0.29:8200/health",
+        "type": "internal"
+    },
+    "本地·LGE镜像": {
+        "health": "http://127.0.0.1:8210/health",
         "type": "internal"
     },
     "本地·联邦桥": {
