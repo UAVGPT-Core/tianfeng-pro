@@ -1,0 +1,17 @@
+{
+  "ts": "2026-07-17T14:00:00",
+  "type": "xiaoshu-7self-cycle",
+  "status": "HEALTHY",
+  "cycle_result": "7/7满格",
+  "cross_validation": {
+    "bridge_health": "ok",
+    "sse_clients": 2,
+    "nodes_online": 5,
+    "messages_unread": 11,
+    "xiaoshu_8779": "healthy",
+    "linglong_8769": "up",
+    "eval_8771": "ok",
+    "linglong_bridge": "ok"
+  },
+  "summary": "小枢七自循环7/7满格·桥绿·积压11条低·全系统正常·LGE写三路不通(已知问题·不影响运行)"
+}

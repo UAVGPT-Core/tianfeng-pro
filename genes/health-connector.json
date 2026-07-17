@@ -1,0 +1,20 @@
+{
+  "ts": "2026-07-17 14:09",
+  "source": "linglong-fed-connector",
+  "online": [
+    "天枢",
+    "灵龙",
+    "太一",
+    "织网",
+    "天玑"
+  ],
+  "removed_expected": [
+    "地枢",
+    "天工",
+    "天怿",
+    "天巡",
+    "小枢"
+  ],
+  "status": "ALL_GREEN",
+  "note": "5在线节点heartbeat<2min. 地枢1649min离线(预期). 小枢天巡removed(API仍up)"
+}
