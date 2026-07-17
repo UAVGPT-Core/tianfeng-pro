@@ -1,0 +1,34 @@
+{
+  "ts": "2026-07-17_1113",
+  "type": "patrol",
+  "bridge": "v4.0",
+  "online": [
+    "天枢",
+    "天玑",
+    "太一",
+    "灵龙",
+    "织网"
+  ],
+  "offline": [
+    "Codex",
+    "天锋PRO",
+    "智谱GLM"
+  ],
+  "removed": [
+    "地枢",
+    "天工",
+    "天怿",
+    "天巡",
+    "小枢",
+    "LGOX-CC",
+    "openclaw",
+    "太一-WSL",
+    "天玑-WSL"
+  ],
+  "unknown": [
+    "AI助手"
+  ],
+  "messages_unread": 58,
+  "lge_write": "unavailable (地枢removed,8778 502)",
+  "summary": "5 online, 3 offline (>18h, logical nodes)"
+}
