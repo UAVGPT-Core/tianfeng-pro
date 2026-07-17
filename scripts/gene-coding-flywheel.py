@@ -1882,6 +1882,7 @@ def search_builtin_patterns(task_description):
         "http2连接|http2前导|connection preface|settings帧|http2 settings|优先序帧|priority|goaway|ping帧|window_update|流控|flow control|initial window": "http2_connection_preface",
         "网络编程|tcp|网络协议|socket|sock|connect|bind|listen|accept|recv|send|epoll|select|poll|非阻塞|异步io|ioservice|protocol|报文|字节流|二进制协议|协议解析|parse|marshal|序列化|反序列化|网络": "http2_frame",
         "编码|字符串|encode|decode|unicode|utf|gbk|乱码|中英文|混排|截断|mojibake|byte|bytes|charset|字符集": "string_encoding_utf8",
+        "连接算子|join算子|nested loop|hash join|merge join|嵌套循环|哈希连接|归并连接|数据库连接|NestedLoop|HashJoin|MergeJoin|外连接|内连接|数据库内核|join_|三种连接|join method|join_strategy|join algorithm|NestedLoopJoin|HashJoin|MergeJoin": "join_operators_pattern",
         "json.*中文|json.*unicode|序列化.*中文|中文.*json|ensure_ascii": "json_encoding_safe",
         "str.*bytes|bytes.*str|字符串.*字节|类型不匹配|类型错误.*编码": "str_bytes_mismatch",
     }

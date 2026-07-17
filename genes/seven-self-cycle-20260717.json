@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-07-17 18:10",
+  "source": "灵龙/七自cron巡检",
+  "cycle_result": "7/7满格",
+  "bridge_health": "ok",
+  "abnormalities": [
+    {
+      "level": "🔴",
+      "node": "地枢(DGX2)",
+      "issue": "离线19h+",
+      "detail": "LGE:8200超时·SSH超时·Tailscale relay offline·桥标记removed"
+    },
+    {
+      "level": "🟡",
+      "node": "消息积压",
+      "issue": "436条unread",
+      "detail": "灵龙自产407条(广播/知识飞轮)·天枢50·织网99·天玑99"
+    },
+    {
+      "level": "🟡",
+      "node": "天工",
+      "issue": "桥标记removed但GPU存活",
+      "detail": "Ollama:11434端口连通·七自cycle不受影响"
+    }
+  ],
+  "healthy_nodes": ["天枢","天玑","太一","灵龙","织网"],
+  "genes_written": "本地:8210镜像(地枢同步挂起)·桥广播已发"
+}
