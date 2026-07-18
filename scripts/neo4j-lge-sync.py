@@ -109,6 +109,15 @@ lge_raw = ssh(
 ).strip()
 print(f"[2] LGE health: {len(lge_raw)} chars")
 
+# ── 2b. LGE mirror stats (本地灵龙:8210 — fills lge_mirror.by_type)
+lge_mirror_raw = ""
+try:
+    req = urllib.request.urlopen("http://127.0.0.1:8210/genes/stats", timeout=8)
+    lge_mirror_raw = req.read().decode()
+    print(f"[2b] LGE mirror stats: {len(lge_mirror_raw)} chars")
+except Exception as e:
+    print(f"[2b] LGE mirror stats: UNAVAILABLE ({e})")
+
 # ── 3. Parse helpers ──
 def parse_csv_stripped(out):
     lines = [l.strip() for l in out.strip().split("\n") if l.strip()]
@@ -283,6 +292,23 @@ output = {
 if existing_tfg:
     output["top_fitness_genes"] = existing_tfg
 
+# ── 9b. Populate lge_mirror from local :8210 (fixes 2026-07-19 empty-trap)
+try:
+    if lge_mirror_raw:
+        mirror = json.loads(lge_mirror_raw)
+        output["lge_mirror"] = {
+            "node": mirror.get("node", "灵龙·Mac mini"),
+            "port": 8210,
+            "total_genes": mirror.get("total"),
+            "active_genes": mirror.get("active"),
+            "by_type": mirror.get("by_type", {}),
+            "status": mirror.get("status", "unknown"),
+            "primary": mirror.get("primary", "地枢:8200"),
+        }
+except Exception as e:
+    print(f"[9b] lge_mirror populate: FAILED ({e})")
+    output["lge_mirror"] = {}
+
 os.makedirs(os.path.dirname(DATA_PATH), exist_ok=True)
 
 # Backup existing before overwrite
@@ -318,6 +344,7 @@ except Exception as e:
     print(f"[API-public] error: {e}")
 
 # ── 13. Verify tianshu file ──
+# Simpler: head + grep the file to confirm it arrived (avoids nested python3 -c quoting hell)
 try:
     out = run(["ssh", "-o", "ConnectTimeout=8", "tianshu",
         "head -3 /Users/a1/.hermes/data/graph-data.json"],
