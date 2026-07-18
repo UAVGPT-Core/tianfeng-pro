@@ -1,0 +1,22 @@
+{
+  "gene_id": "GENE-ALERT-1784253084",
+  "domain": "meta",
+  "content": "⚠️ 多路缺口: 地枢 0/4（2026-07-18 14:31）Tailscale直连+联邦桥+SSH+API四路全断，高危。需立即排查地枢DGX2网络/Docker/Tailscale状态。",
+  "tags": [
+    "alert",
+    "CRITICAL",
+    "multipath_failure",
+    "地枢",
+    "DGX2"
+  ],
+  "source": "灵龙/multi-path-patrol",
+  "detail": {
+    "node": "地枢",
+    "paths_available": 0,
+    "paths_total": 4,
+    "failed_paths": ["Tailscale直连", "联邦桥", "SSH", "API"],
+    "recommended_action": "SSH到地枢检查: tailscale status, docker ps, systemctl status onyx/neo4j/lge",
+    "escalation": "持续超过10分钟请通知主人"
+  },
+  "ts": "2026-07-18T06:31:24Z"
+}
