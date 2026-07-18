@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""天锋PRO 双仓自动同步飞轮 v2.0·GitHub+Gitee"""
+"""天锋PRO 双仓自动同步飞轮 v2.1·GitHub+Gitee·remote-name push"""
 import subprocess, os, time, sys
 from pathlib import Path
 
