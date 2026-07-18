@@ -17,7 +17,8 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 TIANSHU = "tianshu"
-TARGET_DIR = "/Volumes/990Pro/public-web/data/"
+# TARGET_DIR = "/Volumes/990Pro/public-web/data/"  # 990Pro exFAT hang 2026-07-18
+TARGET_DIR = "~/lgox-ops/data/dashboard/"  # fallback: local 天枢 path
 SCRIPTS_DIR = os.path.expanduser("~/lgox-ops/scripts")
 DATA_DIR = os.path.expanduser("~/lgox-ops/data")
 
