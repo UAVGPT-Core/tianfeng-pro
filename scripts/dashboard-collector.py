@@ -4,8 +4,10 @@ import json, urllib.request, subprocess, time, os
 from datetime import datetime
 
 LGE = 'http://100.116.0.29:8200'
-OUT = '/Volumes/990Pro/uavgpt-web/dashboard.json'
-PUB = '/Volumes/990Pro/public-web/dashboard.json'
+# 990Pro exFAT 不可靠 — 2026-07-19 迁移至本地路径 (与DPS pusher对齐)
+LOCAL_DIR = os.path.expanduser('~/lgox-ops/data/dashboard')
+OUT = os.path.join(LOCAL_DIR, 'dashboard.json')
+PUB = os.path.join(LOCAL_DIR, 'dashboard-public.json')
 
 
 def qssh(host, port=22, key=None, timeout=2):
