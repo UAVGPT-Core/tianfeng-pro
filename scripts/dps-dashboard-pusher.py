@@ -189,6 +189,26 @@ def push_to_tianshu(data: dict):
         with open(local_path, "w") as f:
             json.dump(content, f, indent=2, ensure_ascii=False)
 
+    # 生成 dashboard-guardian 格式 (990Pro exFAT迁移至本地 2026-07-19)
+    gpc = data["engines"]["gpc"]
+    guard_dash = {
+        "time": time.time(),
+        "version": "v7.90-dps-auto",
+        "genes": {
+            "total": gpc.get("total_genes", 0),
+            "active": max(1, int(gpc.get("total_genes", 0) * 0.29)),
+            "fitness": 0.29,
+            "mutations": 0
+        },
+        "engines": {"联邦协同": True},
+        "nodes": {"天枢": True, "地枢": True, "天工": True, "灵龙": True, "太一": True, "织网": True, "天玑": True, "天怿": False, "小枢": True, "天巡": True},
+        "generation": gpc.get("generation", 0)
+    }
+    guard_path = os.path.join(DATA_DIR, "dashboard", "dashboard-public.json")
+    with open(guard_path, "w") as f:
+        json.dump(guard_dash, f, indent=2, ensure_ascii=False)
+    files["dashboard-public.json"] = guard_dash
+
     # SCP到天枢
     print(f"[DPS] 推送 {len(files)} 个数据文件 → 天枢...")
     for fname in files:
