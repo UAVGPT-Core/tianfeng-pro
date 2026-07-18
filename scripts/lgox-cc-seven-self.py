@@ -30,10 +30,15 @@ def seven_self():
         bridge_ok = False
     
     try:
-        r = subprocess.run(["npx", "codex", "--version"], capture_output=True, timeout=5)
+        r = subprocess.run(["npx", "codex", "--version"], capture_output=True, timeout=15)
         codex_ok = r.returncode == 0
     except:
-        codex_ok = False
+        # retry once — npx cache can be slow
+        try:
+            r = subprocess.run(["npx", "codex", "--version"], capture_output=True, timeout=15)
+            codex_ok = r.returncode == 0
+        except:
+            codex_ok = False
     
     try:
         r = subprocess.run(["which", "lgox-cc"], capture_output=True)
@@ -112,11 +117,18 @@ def seven_self():
     log(f"自进化: {results['自进化']}")
     
     # 5. 自迭代: 版本检查
-    try:
-        r = subprocess.run(["npx", "codex", "--version"], capture_output=True, timeout=5)
-        ver = r.stdout.decode().strip()
-        results["自迭代"] = f"codex_{ver}"
-    except:
+    ver_ok = False
+    for attempt in range(2):
+        try:
+            r = subprocess.run(["npx", "codex", "--version"], capture_output=True, timeout=15)
+            if r.returncode == 0:
+                ver = r.stdout.decode().strip()
+                results["自迭代"] = f"codex_{ver}"
+                ver_ok = True
+                break
+        except:
+            pass
+    if not ver_ok:
         results["自迭代"] = "fail"
     log(f"自迭代: {results['自迭代']}")
     
