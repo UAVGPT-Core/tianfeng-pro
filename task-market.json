@@ -73,41 +73,8 @@
     "desc": "联邦桥连通性检查",
     "target": "AI助手",
     "id": "bd8edbb470cc",
-    "created": "2026-07-17T20:30:02",
-    "status": "dispatched"
-  },
-  {
-    "node": "*",
-    "type": "universal",
-    "priority": 5,
-    "action": "python3 ~/lgox-ops/scripts/node-digest-engine.py --once --node AI助手 --bridge http://100.100.89.2:8765 2>/dev/null; echo 'DIGESTED'",
-    "desc": "执行知识消化",
-    "target": "AI助手",
-    "id": "ad179dd6f6c6",
-    "created": "2026-07-17T20:30:02",
-    "status": "dispatched"
-  },
-  {
-    "node": "*",
-    "type": "universal",
-    "priority": 8,
-    "action": "python3 ~/lgox-ops/scripts/node-capability.py --register 2>/dev/null; echo 'REPORTED'",
-    "desc": "上报节点能力",
-    "target": "AI助手",
-    "id": "48133869184e",
-    "created": "2026-07-17T20:30:02",
-    "status": "dispatched"
-  },
-  {
-    "node": "*",
-    "type": "universal",
-    "priority": 4,
-    "action": "curl -s http://100.100.89.2:8765/health 2>/dev/null || echo 'BRIDGE_UNREACHABLE'",
-    "desc": "联邦桥连通性检查",
-    "target": "AI助手",
-    "id": "bd8edbb470cc",
     "created": "2026-07-17T21:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -118,7 +85,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-17T21:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -129,7 +96,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-17T21:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -140,7 +107,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-17T21:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -151,7 +118,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-17T21:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -162,7 +129,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-17T21:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -173,7 +140,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-17T22:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -184,7 +151,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-17T22:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -195,7 +162,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-17T22:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -206,7 +173,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-17T22:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -217,7 +184,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-17T22:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -228,7 +195,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-17T22:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -239,7 +206,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-17T23:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -250,7 +217,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-17T23:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -261,7 +228,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-17T23:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -272,7 +239,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-17T23:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -283,7 +250,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-17T23:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -294,7 +261,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-17T23:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -305,7 +272,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T00:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -316,7 +283,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T00:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -327,7 +294,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T00:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -338,7 +305,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T00:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -349,7 +316,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T00:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -360,7 +327,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T00:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -371,7 +338,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T01:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -382,7 +349,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T01:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -393,7 +360,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T01:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -404,7 +371,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T01:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -415,7 +382,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T01:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -426,7 +393,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T01:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -437,7 +404,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T02:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -448,7 +415,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T02:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -459,7 +426,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T02:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -470,7 +437,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T02:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -481,7 +448,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T02:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -492,7 +459,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T02:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -503,7 +470,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T03:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -514,7 +481,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T03:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -525,7 +492,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T03:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -536,7 +503,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T03:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -547,7 +514,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T03:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -558,7 +525,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T03:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -569,7 +536,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T04:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -580,7 +547,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T04:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -591,7 +558,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T04:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -602,7 +569,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T04:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -613,7 +580,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T04:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -624,7 +591,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T04:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -635,7 +602,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T05:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -646,7 +613,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T05:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -657,7 +624,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T05:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -668,7 +635,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T05:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -679,7 +646,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T05:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -690,7 +657,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T05:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -701,7 +668,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T06:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -712,7 +679,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T06:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -723,7 +690,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T06:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -734,7 +701,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T06:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -745,7 +712,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T06:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -756,7 +723,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T06:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -767,7 +734,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T07:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -778,7 +745,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T07:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -789,7 +756,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T07:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -800,7 +767,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T07:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -811,7 +778,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T07:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -822,7 +789,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T07:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -833,7 +800,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T08:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -844,7 +811,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T08:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -855,7 +822,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T08:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -866,7 +833,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T08:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -877,7 +844,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T08:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -888,7 +855,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T08:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -899,7 +866,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T09:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -910,7 +877,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T09:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -921,7 +888,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T09:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -932,7 +899,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T09:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -943,7 +910,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T09:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -954,7 +921,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T09:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -965,7 +932,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T10:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -976,7 +943,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T10:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -987,7 +954,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T10:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -998,7 +965,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T10:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1009,7 +976,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T10:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1020,7 +987,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T10:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1031,7 +998,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T11:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1042,7 +1009,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T11:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1053,7 +1020,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T11:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1064,7 +1031,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T11:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1075,7 +1042,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T11:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1086,7 +1053,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T11:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1097,7 +1064,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T12:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1108,7 +1075,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T12:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1119,7 +1086,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T12:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1130,7 +1097,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T12:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1141,7 +1108,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T12:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1152,7 +1119,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T12:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1163,7 +1130,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T13:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1174,7 +1141,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T13:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1185,7 +1152,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T13:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1196,7 +1163,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T13:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1207,7 +1174,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T13:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1218,7 +1185,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T13:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "天枢",
@@ -1515,7 +1482,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T14:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1625,7 +1592,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T14:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1735,7 +1702,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T14:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1988,7 +1955,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T14:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -1999,7 +1966,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T14:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2010,7 +1977,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T14:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2021,7 +1988,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T15:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2032,7 +1999,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T15:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2043,7 +2010,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T15:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2054,7 +2021,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T15:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2065,7 +2032,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T15:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2076,7 +2043,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T15:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2087,7 +2054,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T16:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2098,7 +2065,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T16:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2109,7 +2076,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T16:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2120,7 +2087,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T16:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2131,7 +2098,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T16:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2142,7 +2109,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T16:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2153,7 +2120,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T17:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2164,7 +2131,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T17:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2175,7 +2142,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T17:00:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2186,7 +2153,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T17:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2197,7 +2164,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T17:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2208,7 +2175,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T17:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2219,7 +2186,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T18:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2230,7 +2197,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T18:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2241,7 +2208,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T18:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2252,7 +2219,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T18:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2263,7 +2230,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T18:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2274,7 +2241,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T18:30:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2285,7 +2252,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T19:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2296,7 +2263,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T19:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2307,7 +2274,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T19:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2318,7 +2285,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T19:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2329,7 +2296,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T19:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2340,7 +2307,7 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T19:30:02",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2351,7 +2318,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-18T20:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2362,7 +2329,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-18T20:00:01",
-    "status": "dispatched"
+    "status": "pending"
   },
   {
     "node": "*",
@@ -2373,6 +2340,39 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-18T20:00:01",
-    "status": "dispatched"
+    "status": "pending"
+  },
+  {
+    "node": "*",
+    "type": "universal",
+    "priority": 4,
+    "action": "curl -s http://100.100.89.2:8765/health 2>/dev/null || echo 'BRIDGE_UNREACHABLE'",
+    "desc": "联邦桥连通性检查",
+    "target": "AI助手",
+    "id": "bd8edbb470cc",
+    "created": "2026-07-18T20:30:02",
+    "status": "pending"
+  },
+  {
+    "node": "*",
+    "type": "universal",
+    "priority": 5,
+    "action": "python3 ~/lgox-ops/scripts/node-digest-engine.py --once --node AI助手 --bridge http://100.100.89.2:8765 2>/dev/null; echo 'DIGESTED'",
+    "desc": "执行知识消化",
+    "target": "AI助手",
+    "id": "ad179dd6f6c6",
+    "created": "2026-07-18T20:30:02",
+    "status": "pending"
+  },
+  {
+    "node": "*",
+    "type": "universal",
+    "priority": 8,
+    "action": "python3 ~/lgox-ops/scripts/node-capability.py --register 2>/dev/null; echo 'REPORTED'",
+    "desc": "上报节点能力",
+    "target": "AI助手",
+    "id": "48133869184e",
+    "created": "2026-07-18T20:30:02",
+    "status": "pending"
   }
 ]
