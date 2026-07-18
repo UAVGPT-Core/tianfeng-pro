@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-联邦基因永动引擎 v2.0 — VOD Pro驱动·2035视角
-修复: v1依赖Ollama(无)+NGC(Key丢失) → v2全走VOD Pro免费API
+联邦基因永动引擎 v2.0 — 智谱GLM-4-Flash驱动·2035视角
+修复: v1依赖Ollama(无)+NGC(Key丢失) → v2全走智谱免费API
 部署: 天枢 cron每10min | 目标50条/次 → ~7,200条/天
+智谱: 200万token/天免费·温度0.3·max256精简
 """
 import json, os, sys, time, sqlite3, hashlib, re
 from datetime import datetime
@@ -10,51 +11,41 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import urllib.request
 
-VERSION = "2.0.0-vod"
+VERSION = "2.0.0-glm"
 NODE = "天枢"
 DATA_DIR = Path.home() / "lgox-ops" / "data" / "perpetual-gene"
 DB_PATH = DATA_DIR / "genes.db"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-# VOD Pro 免费API
-VOD_KEY = os.getenv("BAIDU_VOD_KEY", "")
-if not VOD_KEY:
-    try:
-        with open(Path.home() / ".hermes" / ".env") as f:
-            for line in f:
-                if line.startswith("BAIDU_VOD_KEY="):
-                    VOD_KEY = line.split("=", 1)[1].strip().strip('"').strip("'")
-                    break
-    except:
-        pass
+# 智谱GLM-4-Flash 免费API (200万token/天)
+GLM_KEY = "fd867a96bad64f53a8ece13ac6911887.T3zYiYf7KbxhVTb0"
+GLM_API = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+GLM_MODEL = "glm-4-flash"
 
-VOD_URL = "https://vod.bj.baidubce.com/v3/chat/oc/v1/chat/completions"
 LGE_URL = "http://100.116.0.29:8200"
 LGE_KEY = "lgox-gene-key-2025"
 
-CONCURRENCY = 3
+CONCURRENCY = 4
 TARGET_COUNT = 50
 GENE_MAX_LENGTH = 600
 
-def vod_chat(messages, max_tokens=400, temperature=0.7):
+def glm_chat(messages, max_tokens=300, temperature=0.7):
     data = json.dumps({
-        "model": "deepseek-v4-flash",
+        "model": GLM_MODEL,
         "messages": messages,
         "max_tokens": max_tokens,
         "temperature": temperature
     }).encode()
-    req = urllib.request.Request(VOD_URL, data=data, headers={
+    req = urllib.request.Request(GLM_API, data=data, headers={
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {VOD_KEY}"
+        "Authorization": f"Bearer {GLM_KEY}"
     })
     r = urllib.request.urlopen(req, timeout=30)
     return json.loads(r.read())["choices"][0]["message"]["content"]
 
 def log(msg):
-    now = datetime.now().strftime("%m%d-%H%M%S")
-    print(f"[{now}] {msg}")
+    print(f"[{datetime.now().strftime('%m%d-%H%M%S')}] {msg}")
 
-# 六域知识模板
 DOMAINS = {
     "ai-agent": {
         "name": "AI Agent架构", "weight": 25,
@@ -164,138 +155,88 @@ def init_db():
     return conn
 
 def produce_gene(domain_key, topic, batch_id):
-    prompt = f"""你是LGOX联邦知识工程师。生成一条高质量技术知识(150-300字)，领域:{DOMAINS[domain_key]['name']}，主题:{topic}。
-
-格式:
-### [知识点标题]
-**核心概念**: (50字)
-**技术细节**: (100字)
-**联邦应用**: (50字)
-**相关技术**: (列出3项)
-
-注意:纯技术知识·可验证·可追溯·不要故事"""
-    
+    prompt = f"生成一条技术知识(150-300字)，领域:{DOMAINS[domain_key]['name']}，主题:{topic}。格式: ###标题 | 核心概念50字 | 技术细节100字 | 联邦应用50字 | 相关技术3项。纯技术·可验证。"
     try:
-        content = vod_chat([{"role": "user", "content": prompt}], 400, 0.7)
+        content = glm_chat([{"role": "user", "content": prompt}], 400, 0.7)
         if len(content) > 50:
-            return {
-                "content": content[:GENE_MAX_LENGTH],
-                "domain": DOMAINS[domain_key]["name"],
-                "domain_key": domain_key,
-                "topic": topic,
-                "batch_id": batch_id,
-            }
-    except:
+            return {"content": content[:GENE_MAX_LENGTH], "domain": DOMAINS[domain_key]["name"], "domain_key": domain_key, "topic": topic, "batch_id": batch_id}
+    except Exception as e:
         pass
     return None
 
-def vod_quality_score(gene):
-    prompt = f"""评分这段技术知识(0.0-1.0)。Reply ONLY the number.
-技术深度(0.4): 概念是否准确具体
-可操作性(0.3): 能否直接应用
-联邦价值(0.3): 对AI联邦是否有用
-
-知识: {gene['content'][:400]}
-Score:"""
+def glm_quality_score(gene):
+    prompt = f"Rate this tech knowledge 0.0-1.0. Reply ONLY number.\n{gene['content'][:300]}\nScore:"
     try:
-        text = vod_chat([{"role": "user", "content": prompt}], 5, 0.1)
+        text = glm_chat([{"role": "user", "content": prompt}], 5, 0.1)
         nums = re.findall(r'[\d.]+', text)
-        if nums:
-            return min(0.95, max(0.05, float(nums[0])))
+        return min(0.95, max(0.05, float(nums[0]))) if nums else 0.45
     except:
-        pass
-    return 0.45
+        return 0.45
 
 def production_line(batch_id):
-    log(f"🔧 量产线启动·目标{TARGET_COUNT}条·{CONCURRENCY}并发")
+    log(f"量产启动·目标{TARGET_COUNT}条·{CONCURRENCY}并发")
     tasks = []
     total_weight = sum(d["weight"] for d in DOMAINS.values())
     for dk, dc in DOMAINS.items():
         count = max(1, int(TARGET_COUNT * dc["weight"] / total_weight))
         for i in range(count):
-            topic = dc["topics"][i % len(dc["topics"])]
-            tasks.append((dk, topic))
+            tasks.append((dk, dc["topics"][i % len(dc["topics"])]))
     
     genes = []
     with ThreadPoolExecutor(max_workers=CONCURRENCY) as executor:
-        futures = {executor.submit(produce_gene, dk, topic, batch_id): i 
-                   for i, (dk, topic) in enumerate(tasks[:TARGET_COUNT])}
+        futures = {executor.submit(produce_gene, dk, topic, batch_id): i for i, (dk, topic) in enumerate(tasks[:TARGET_COUNT])}
         for f in as_completed(futures):
-            result = f.result()
-            if result:
-                genes.append(result)
+            r = f.result()
+            if r: genes.append(r)
     
-    log(f"  量产:{len(genes)}/{len(tasks)}条·成功率{100*len(genes)//max(1,len(tasks))}%")
+    log(f"量产:{len(genes)}/{len(tasks)}条·成功率{100*len(genes)//max(1,len(tasks))}%")
     return genes
 
 def quality_filter(genes, conn):
-    log(f"🔍 质量过滤·{len(genes)}条待审")
+    log(f"质量过滤·{len(genes)}条待审")
     passed = []
     for gene in genes[:50]:
-        score = vod_quality_score(gene)
+        score = glm_quality_score(gene)
         gene["fitness_score"] = score
         gene["quality_grade"] = "A" if score >= 0.70 else "B" if score >= 0.50 else "C"
         gene["gene_hash"] = hashlib.md5(gene["content"][:200].encode()).hexdigest()[:16]
-        
         if score >= 0.30:
             passed.append(gene)
             try:
-                conn.execute("""INSERT OR IGNORE INTO genes 
-                    (content,domain,fitness_score,quality_grade,gene_hash,production_batch)
-                    VALUES (?,?,?,?,?,?)""",
-                    (gene["content"][:500], gene["domain"], score, 
-                     gene["quality_grade"], gene["gene_hash"], gene.get("batch_id","")))
-            except:
-                pass
+                conn.execute("INSERT OR IGNORE INTO genes (content,domain,fitness_score,quality_grade,gene_hash,production_batch) VALUES (?,?,?,?,?,?)",
+                    (gene["content"][:500], gene["domain"], score, gene["quality_grade"], gene["gene_hash"], gene.get("batch_id","")))
+            except: pass
     conn.commit()
-    log(f"  通过:{len(passed)}条·均分:{sum(g['fitness_score'] for g in passed)/max(1,len(passed)):.2f}")
+    if passed:
+        log(f"通过:{len(passed)}条·均分{sum(g['fitness_score'] for g in passed)/len(passed):.2f}")
     return passed
 
 def write_to_lge(genes):
     written = 0
     for gene in genes:
         try:
-            data = json.dumps({
-                "content": gene["content"],
-                "memory_type": "semantic",
-                "source": "永动引擎V2",
-                "fitness": gene.get("fitness_score", 0.5)
-            }).encode()
-            req = urllib.request.Request(f"{LGE_URL}/genes/write", data=data,
-                headers={"Content-Type": "application/json", "X-LGE-Key": LGE_KEY})
+            data = json.dumps({"content": gene["content"], "memory_type": "semantic", "source": "永动引擎V2", "fitness": gene.get("fitness_score", 0.5)}).encode()
+            req = urllib.request.Request(f"{LGE_URL}/genes/write", data=data, headers={"Content-Type": "application/json", "X-LGE-Key": LGE_KEY})
             urllib.request.urlopen(req, timeout=10)
             written += 1
-        except:
-            pass
+        except: pass
     return written
 
 def main():
     batch_id = datetime.now().strftime("B%Y%m%d-%H%M")
-    log(f"═══ DNA双螺旋·永动循环 V2 ═══")
-    
+    log(f"═══ DNA双螺旋·永动循环 V2(GLM) ═══")
     conn = init_db()
-    
-    # 螺旋A: 量产
     genes = production_line(batch_id)
     if not genes:
-        log("❌ 量产失败·无产出")
+        log("❌ 量产失败")
         return
-    
-    # 螺旋B: 质量过滤
     passed = quality_filter(genes, conn)
-    
-    # 写入LGE
     written = write_to_lge(passed)
-    log(f"🧬 写入LGE:{written}条")
-    
-    # 统计
+    log(f"✅ 完成·{len(passed)}条·写入LGE:{written}条")
     avg_f = sum(g["fitness_score"] for g in passed) / max(1, len(passed))
-    conn.execute("INSERT INTO batches VALUES (?,?,?,?,?)",
-        (batch_id, len(passed), round(avg_f, 3), "completed", datetime.now().isoformat()))
+    conn.execute("INSERT INTO batches VALUES (?,?,?,?,?)", (batch_id, len(passed), round(avg_f, 3), "completed", datetime.now().isoformat()))
     conn.commit()
     conn.close()
-    
-    log(f"✅ 完成·{len(passed)}条·均分{avg_f:.2f}·写入{written}条")
 
 if __name__ == "__main__":
     main()
