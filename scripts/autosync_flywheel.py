@@ -6,8 +6,8 @@ from pathlib import Path
 R = Path.home() / "lgox-ops"
 K = Path.home() / ".ssh/id_ed25519"
 REMOTES = [
-    {"name": "GitHub", "url": "git@github.com:UAVGPT-Core/tianfeng-pro.git", "type": "ssh"},
-    {"name": "Gitee",  "url": "git@gitee.com:uavgpt/tianfeng-pro.git", "type": "ssh"},
+    {"name": "GitHub", "url": "git@github.com:UAVGPT-Core/tianfeng-pro.git", "remote": "origin", "type": "ssh"},
+    {"name": "Gitee",  "url": "git@gitee.com:uavgpt/tianfeng-pro.git", "remote": "gitee", "type": "ssh"},
 ]
 
 def run(cmd_list, cwd=R, timeout=30, env=None):
@@ -32,10 +32,10 @@ def auto_sync():
         try:
             env = os.environ.copy()
             env["GIT_SSH_COMMAND"] = f"ssh -i {K} -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ServerAliveInterval=30"
-            ok, out, err = run(["git", "push", remote["url"], "main"], timeout=120, env=env)
+            ok, out, err = run(["git", "push", remote["remote"], "main"], timeout=120, env=env)
             if not ok:
                 # Remote diverged — fetch, merge (NOT rebase) to avoid divergent history
-                run(["git", "fetch", remote["url"], "main"], timeout=30, env=env)
+                run(["git", "fetch", remote["remote"], "main"], timeout=30, env=env)
                 # Merge remote into local (accept remote's version on conflicts)
                 ok_merge, _, merge_err = run(
                     ["git", "merge", f"FETCH_HEAD", "--no-edit", "-m",
@@ -49,7 +49,7 @@ def auto_sync():
                     results.append(f"{remote['name']}: ❌ merge-conflict-needs-manual")
                     continue
                 # Retry push after merge
-                ok, out, err = run(["git", "push", remote["url"], "main"], timeout=120, env=env)
+                ok, out, err = run(["git", "push", remote["remote"], "main"], timeout=120, env=env)
             results.append(f"{remote['name']}: {'✅' if ok else '❌ '+err[:60]}")
         except Exception as e:
             results.append(f"{remote['name']}: {str(e)[:60]}")
