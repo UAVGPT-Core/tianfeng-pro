@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 天巡 · 联邦外部哨兵 (第10节点) — v1.0
-运行于天枢 StockAgent:8001 (role=tianxun)
+运行于灵龙 StockAgent:8000 (role=tianxun)
 职能: 从公网视角巡检联邦·宪法守卫·企业AI门面·外部健康签证
 
 独特价值: 天巡是联邦中唯一能从「公网视角」检查节点可达性的节点。
@@ -18,7 +18,7 @@
 import json, sys, os, time
 import urllib.request, urllib.error
 
-BASE = "http://localhost:8001"
+BASE = "http://localhost:8000"
 HEALTH_URL = f"{BASE}/health"
 VISITOR_URL = f"{BASE}/api/visitor/stats"
 REGISTER_URL = f"{BASE}/api/chat/tianxun/register"
@@ -183,7 +183,7 @@ def cmd_health():
     status = "OK" if code == 200 else f"DOWN (HTTP {code})"
     print(json.dumps({
         "node": "天巡", "role": "联邦外部哨兵·第10节点·企业AI门面",
-        "backing": "天枢 StockAgent:8001 (role=tianxun)",
+        "backing": "灵龙 StockAgent:8000 (role=tianxun)",
         "motto": "遇水架桥，逢山筑路 🔥",
         "status": status,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S")

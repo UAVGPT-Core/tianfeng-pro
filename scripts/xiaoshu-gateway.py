@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 小枢 · 联邦门面网关 (第9节点) — v1.0
-运行于天枢 StockAgent:8001 (role=xiaoshu)
+运行于灵龙 StockAgent:8000 (role=xiaoshu)
 职能: 联邦公开展示·量化灯塔·低空经济门户·引流阵地
 
 用法:
@@ -14,7 +14,7 @@
 import json, sys, os, time
 import urllib.request, urllib.error
 
-BASE = "http://localhost:8001"
+BASE = "http://localhost:8000"
 WIND_BASE = "http://localhost:18770"  # 天枢Wind金融引擎·SSH隧道
 FACTS_URL = f"{BASE}/api/facts"
 HEALTH_URL = f"{BASE}/health"
@@ -130,7 +130,7 @@ def cmd_health():
     status = "OK" if code == 200 else f"DOWN (HTTP {code})"
     print(json.dumps({
         "node": "小枢", "role": "联邦门面·第9节点·AI灯塔",
-        "backing": "天枢 StockAgent:8001 (role=xiaoshu)",
+        "backing": "灵龙 StockAgent:8000 (role=xiaoshu)",
         "status": status,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S")
     }, ensure_ascii=False, indent=2))
