@@ -1,85 +1,5 @@
 [
   {
-    "task_id": "c033ed19",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "8ef8bf9f",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "33965ca5",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "fcbfacd2",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "e014ec11",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "bdba8ea7",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "c6dcc7ed",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "d44c11ac",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "fc8221d4",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "a194c4d1",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "562c657b",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "0f0ab6d5",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "deb26d82",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
     "task_id": "a14f5048",
     "status": "skipped",
     "output": "no_action",
@@ -3016,6 +2936,84 @@
   },
   {
     "task_id": "16e26ca9",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "8841c06f",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "403d2ece",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "1ac8cc7a",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "99a7f8ea",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "16e26ca9",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "a0bf6f9a",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "ce292e06",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "8841c06f",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "403d2ece",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "1ac8cc7a",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "99a7f8ea",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "16e26ca9",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "a0bf6f9a",
     "status": "skipped",
     "output": "no_action",
     "error": ""
