@@ -438,6 +438,8 @@ DB_PATH = os.path.expanduser("~/.hermes/fed_messages.db")
 
 def _get_db() -> sqlite3.Connection:
     db = sqlite3.connect(DB_PATH)
+    db.execute("PRAGMA journal_mode=WAL")
+    db.execute("PRAGMA busy_timeout=5000")
     db.execute("""
         CREATE TABLE IF NOT EXISTS messages (
             id TEXT PRIMARY KEY,
