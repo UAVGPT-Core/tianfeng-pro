@@ -1009,7 +1009,7 @@
     "target": "AI助手",
     "id": "bd8edbb470cc",
     "created": "2026-07-20T00:00:01",
-    "status": "pending"
+    "status": "dispatched"
   },
   {
     "node": "*",
@@ -1020,7 +1020,7 @@
     "target": "AI助手",
     "id": "ad179dd6f6c6",
     "created": "2026-07-20T00:00:01",
-    "status": "pending"
+    "status": "dispatched"
   },
   {
     "node": "*",
@@ -1031,6 +1031,6 @@
     "target": "AI助手",
     "id": "48133869184e",
     "created": "2026-07-20T00:00:01",
-    "status": "pending"
+    "status": "dispatched"
   }
 ]
