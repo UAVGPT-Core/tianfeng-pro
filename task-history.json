@@ -1,698 +1,5 @@
 [
   {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "b8ba8831",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "b8ba8831",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "b8ba8831",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "b8ba8831",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "b8ba8831",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "b8ba8831",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "b8ba8831",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "b8ba8831",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "b8ba8831",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "b8ba8831",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "b8ba8831",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "b8ba8831",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "54a4e201",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "e73395fc",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "b8ba8831",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "54a4e201",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "a640cab3",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
-    "task_id": "3e12a0ac",
-    "status": "tsf_failed",
-    "output": "/bin/sh: {type:: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
     "task_id": "e73395fc",
     "status": "tsf_failed",
     "output": "/bin/sh: {type:: command not found\n",
@@ -3450,6 +2757,677 @@
   },
   {
     "task_id": "8d78bb34",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "b036666f",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "b036666f",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "b036666f",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "b036666f",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "b036666f",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "5a51bc5d",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "88c619c0",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "db966f9f",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "a602bd88",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "f1a0c9e3",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "d38eb43c",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "44a56c68",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "52ef27d9",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "b17bee88",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "13123e1a",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "b3d30dc1",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "76a7c7c1",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "014ab897",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "3076efb4",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "2fbdef0b",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "3359b2bf",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "4c25f40d",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "cc801f97",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "b036666f",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "db966f9f",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "a602bd88",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "f1a0c9e3",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "d38eb43c",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "b17bee88",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "b3d30dc1",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "b5c62757",
     "status": "skipped",
     "output": "no_action",
     "error": ""
