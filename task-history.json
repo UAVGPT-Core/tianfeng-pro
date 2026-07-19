@@ -1,12 +1,5 @@
 [
   {
-    "task_id": "3359b2bf",
-    "status": "tsf_failed",
-    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
-    "error": "",
-    "exit_code": 127
-  },
-  {
     "task_id": "4c25f40d",
     "status": "tsf_failed",
     "output": "/bin/sh: {type:: command not found\n",
@@ -3089,6 +3082,12 @@
   },
   {
     "task_id": "7028c435",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
+  },
+  {
+    "task_id": "2db10c3e",
     "status": "skipped",
     "output": "no_action",
     "error": ""
