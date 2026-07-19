@@ -479,6 +479,13 @@ def verify_code(code, lang="python"):
     """验证代码质量"""
     results = {"compile": None, "lint": None, "errors": []}
     if lang in ("python", "py"):
+        # Unicode全角→半角标准化 (根治中文逗号U+FF0C等SyntaxError)
+        for full, half in [
+            ("\uff0c", ","), ("\u3001", ","), ("\uff1a", ":"),
+            ("\uff08", "("), ("\uff09", ")"), ("\u2018", "'"),
+            ("\u2019", "'"), ("\u201c", '"'), ("\u201d", '"'),
+        ]:
+            code = code.replace(full, half)
         try:
             compile(code, "<gen>", "exec")
             results["compile"] = "pass"
