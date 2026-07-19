@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """LGOX联邦搜索桥 v3.0 — 全节点联邦搜索+健康巡检+跨节点消息+SSE实时推送"""
-# import http.client, json, os, socket, time, uuid, threading, sqlite3, subprocess  # 天锋自治:未用导入
+import json, os, socket, time, uuid, threading, sqlite3, subprocess
 from http.server import HTTPServer, ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import unquote, urlparse, parse_qs
 

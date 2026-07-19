@@ -11,7 +11,7 @@ NODE_PATHS = {
     "天枢": [
         {"name": "雷雳", "host": "192.168.3.3", "port": 22, "type": "tcp", "timeout": 3, "prio": 1},
         {"name": "WiFi", "host": "100.100.89.2", "port": 22, "type": "tcp", "timeout": 5, "prio": 2},
-        {"name": "联邦桥8765", "host": "100.100.89.2", "port": 8765, "type": "http", "endpoint": "/health", "timeout": 5, "prio": 3},
+        {"name": "联邦桥8765", "host": "127.0.0.1", "port": 8765, "type": "http", "endpoint": "/health", "timeout": 5, "prio": 3},
         {"name": "副桥8766", "host": "100.100.89.2", "port": 8766, "type": "http", "endpoint": "/health", "timeout": 5, "prio": 4},
     ],
     "地枢": [
