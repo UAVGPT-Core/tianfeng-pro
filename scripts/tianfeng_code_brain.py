@@ -479,11 +479,14 @@ def verify_code(code, lang="python"):
     """验证代码质量"""
     results = {"compile": None, "lint": None, "errors": []}
     if lang in ("python", "py"):
-        # Unicode全角→半角标准化 (根治中文逗号U+FF0C等SyntaxError)
+        # Unicode全角→半角标准化 (根治中文标点等SyntaxError)
         for full, half in [
-            ("\uff0c", ","), ("\u3001", ","), ("\uff1a", ":"),
-            ("\uff08", "("), ("\uff09", ")"), ("\u2018", "'"),
-            ("\u2019", "'"), ("\u201c", '"'), ("\u201d", '"'),
+            ("\uff0c", ","), ("\u3001", ","), ("\uff1a", ":"), ("\uff1b", ";"),
+            ("\uff08", "("), ("\uff09", ")"), ("\u300a", "<"), ("\u300b", ">"),
+            ("\u2018", "'"), ("\u2019", "'"), ("\u201c", '"'), ("\u201d", '"'),
+            ("\u3002", "#"),  # 中文句号→注释符，避免SyntaxError
+            ("\uff01", "#"),  # 中文感叹号→注释符
+            ("\uff1f", "#"),  # 中文问号→注释符
         ]:
             code = code.replace(full, half)
         try:
@@ -536,7 +539,7 @@ def generate_code(task, language="python"):
     if genes:
         gene_hints = " | ".join([g.get('content','')[:60] for g in genes[:2]])
 
-    system = f"你是{language}程序员。输出可运行代码，用```{language}包裹。{gene_hints}"
+    system = f"You are a {language} programmer. Output ONLY executable code wrapped in ```{language}```. No explanations, no Chinese characters, no markdown outside the code block. Only ASCII characters in the code. {gene_hints}"
 
     # 尝试天工coder (single model — avoid redundant fallback w/ same 14B)
     code_text = None
@@ -555,15 +558,15 @@ def generate_code(task, language="python"):
         return {"error": "all_models_failed"}
 
     blocks = extract_code(code_text, language)
-    best_code, best_score = None, -1
+    best_code, best_score, best_verif = None, -1, None
     for lang, code in blocks:
         v = verify_code(code, lang or language)
         sc = score_code(code, v)
         log(f"  📊 {lang}: compile={v['compile']} lint={v['lint']} score={sc}")
         if sc > best_score:
-            best_score, best_code = sc, code
+            best_score, best_code, best_verif = sc, code, v
 
-    if best_code and best_score >= 60:
+    if best_code and best_score >= 60 and best_verif and best_verif.get("compile") == "pass":
         write_gene(f"[Code] {task[:80]} | lang={language} | score={best_score} | model={model_used}", "semantic")
 
     return {"code": best_code, "score": best_score, "model": model_used,
