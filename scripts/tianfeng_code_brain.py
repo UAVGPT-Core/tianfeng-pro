@@ -207,7 +207,7 @@ def call_ds_flash(prompt, system="", temp=0.3, max_tokens=1024):
     }).encode()
     
     req = urllib.request.Request(
-        "https://api.deepseek.com/v1/chat/completions",
+        "http://localhost:18666/v1/chat/completions",
         data=payload,
         headers={
             "Content-Type": "application/json",

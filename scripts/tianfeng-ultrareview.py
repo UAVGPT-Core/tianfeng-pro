@@ -17,8 +17,8 @@ EXPLORER_ROLES = {
 
 # 双模型配置
 DUAL_MODELS = {
-    "pro": {"model": "deepseek-v4-pro", "api": "https://api.deepseek.com/v1", "name": "DeepSeek Pro"},
-    "codex": {"model": "deepseek-v4-flash", "api": "https://api.deepseek.com/v1", "name": "Codex(Flash模拟)"},
+    "pro": {"model": "deepseek-v4-pro", "api": "http://localhost:18666/v1", "name": "DeepSeek Pro"},
+    "codex": {"model": "deepseek-v4-flash", "api": "http://localhost:18666/v1", "name": "Codex(Flash模拟)"},
 }
 
 class UltraReview:
