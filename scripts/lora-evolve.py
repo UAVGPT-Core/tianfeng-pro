@@ -138,22 +138,64 @@ def lora_fine_tune(dataset_path, output_name):
     return f"/tmp/lora-output/{output_name}/final"
 
 def deploy_to_ollama(lora_path, model_name):
-    """GGUF转换+Ollama部署(简化版:通过Modelfile)"""
+    """合并LoRA+导出GGUF+Ollama部署"""
+    import shutil
     log(f"部署到Ollama: {model_name}")
-    # 创建Modelfile指向微调后的模型
+    
+    # ① 合并LoRA权重到基础模型
+    log("合并LoRA权重...")
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from peft import PeftModel
+    import torch
+    
+    base_m = "Qwen/Qwen2.5-Coder-7B-Instruct"
+    tokenizer = AutoTokenizer.from_pretrained(lora_path, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(base_m, device_map="auto",
+        trust_remote_code=True, torch_dtype=torch.float16)
+    model = PeftModel.from_pretrained(model, lora_path)
+    model = model.merge_and_unload()
+    
+    merged_path = f"/tmp/merged-{model_name}"
+    model.save_pretrained(merged_path)
+    tokenizer.save_pretrained(merged_path)
+    log(f"权重已合并: {merged_path}")
+    
+    # ② 转GGUF(用llama.cpp)
+    gguf_path = f"/tmp/{model_name}.gguf"
+    log("转换GGUF...")
+    subprocess.run([
+        sys.executable, "-m", "llama_cpp.convert",
+        merged_path, "--outfile", gguf_path, "--outtype", "f16"
+    ], check=True, timeout=600)
+    
+    # ③ Ollama Modelfile with GGUF
     modelfile = f"""
-FROM {BASE_MODEL}
-# LoRA微调: {model_name}
-# 训练基因数: from elite genes
-SYSTEM \"You are LGOX evolved AI. Answer with precision, data, and actionable insights.\"
+FROM {gguf_path}
+SYSTEM \"\"\"You are LGOX evolved AI. Answer with precision, data, and actionable insights.\"\"\"
 """
-    with open(f"/tmp/{model_name}.Modelfile", "w") as f:
+    mf_path = f"/tmp/{model_name}.Modelfile"
+    with open(mf_path, "w") as f:
         f.write(modelfile)
-
-    # Ollama创建
-    subprocess.run(["ollama", "create", model_name, "-f", f"/tmp/{model_name}.Modelfile"],
-        capture_output=True, timeout=120)
-    log(f"Ollama模型已创建: {model_name}")
+    
+    # ④ 创建Ollama模型
+    subprocess.run(["ollama", "create", model_name, "-f", mf_path],
+        capture_output=True, timeout=180)
+    log(f"Ollama模型: {model_name}")
+    
+    # ⑤ 验证
+    r = subprocess.run(["ollama", "run", model_name, "say ok"], 
+        capture_output=True, timeout=30)
+    if r.returncode == 0:
+        log(f"✅ 部署验证通过: {model_name}")
+    else:
+        log(f"⚠️ 验证异常: {r.stderr.decode()[:100]}")
+    
+    # ⑥ 清理旧版(保留最新3版)
+    result = subprocess.run(["ollama", "list"], capture_output=True, text=True)
+    evolved = [l.split()[0] for l in result.stdout.split('\n') if 'lgox-evolved' in l]
+    for old in evolved[:-3]:
+        subprocess.run(["ollama", "rm", old], capture_output=True)
+        log(f"清理旧版: {old}")
 
 def lge_log_evolution(model_name, gene_count):
     """记录进化到LGE"""
