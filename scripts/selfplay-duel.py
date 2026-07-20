@@ -54,7 +54,7 @@ def load_meta():
 def save_meta(m):
     json.dump(m, open(META,"w"), ensure_ascii=False)
 
-def call(url, q, timeout=20):
+def call(url, q, timeout=45):
     d = json.dumps({"messages":[{"role":"user","content":q}],"model":"deepseek-v4-flash","stream":False}).encode()
     req = urllib.request.Request(url, data=d)
     req.add_header("Content-Type","application/json")
