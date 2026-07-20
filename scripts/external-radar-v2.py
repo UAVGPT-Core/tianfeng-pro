@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 LGE = 'http://127.0.0.1:8210'
 LGE_KEY = 'lgox-gene-key-2025'
 BRIDGE = 'http://127.0.0.1:8765'
-TIMEOUT = 30  # 10→30秒
+TIMEOUT = 20  # 10→30秒
 GENES_WRITTEN = 0
 GENES_COLLECTED = []  # v2.0: 批量收集
 
@@ -68,8 +68,8 @@ def scan_arxiv():
     genes = []
     for q in queries:
         try:
-            url = f'http://export.arxiv.org/api/query?search_query=all:{q}&sortBy=submittedDate&sortOrder=descending&max_results=3'
-            resp = urllib.request.urlopen(url, timeout=20)
+            url = f'https://export.arxiv.org/api/query?search_query=all:{q}&sortBy=submittedDate&sortOrder=descending&max_results=3'
+            resp = urllib.request.urlopen(url, timeout=15)
             root = ET.fromstring(resp.read())
             ns = {'a': 'http://www.w3.org/2005/Atom'}
             for entry in root.findall('a:entry', ns)[:3]:
@@ -92,7 +92,7 @@ def scan_github():
         req = urllib.request.Request(url, headers={
             'Accept': 'application/vnd.github.v3+json',
             'User-Agent': 'LGOX-Radar-v2'})
-        resp = urllib.request.urlopen(req, timeout=20)
+        resp = urllib.request.urlopen(req, timeout=15)
         data = json.loads(resp.read())
         for repo in data.get('items', [])[:5]:
             name = repo['full_name']
@@ -118,7 +118,7 @@ def scan_huggingface():
     for url in urls:
         try:
             req = urllib.request.Request(url, headers={'User-Agent': 'LGOX-Radar-v2'})
-            resp = urllib.request.urlopen(req, timeout=20)
+            resp = urllib.request.urlopen(req, timeout=15)
             data = json.loads(resp.read())
             for model in data[:5]:
                 mid = model.get('modelId', model.get('id', ''))
