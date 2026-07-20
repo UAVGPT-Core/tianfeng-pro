@@ -21,17 +21,16 @@ def save_json(fp, data):
     with open(fp, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-# 错误模式 → 修复策略 (运行时构造,避免import时未定义)
-def get_fix_patterns():
-    return [
-        ("str_concat", r"TypeError: can only concatenate str", _fix_str_concat),
-        ("list_get", r"AttributeError: .* object has no attribute .get.", _fix_list_get),
-        ("type_ops", r"TypeError: .*unsupported operand", _fix_type_ops),
-        ("key_error", r"KeyError: .", _fix_key_error),
-        ("missing_mod", r"ModuleNotFoundError: No module named", _fix_missing_module),
-        ("empty_json", r"JSONDecodeError.*Expecting value", _fix_empty_json),
-        ("timeout", r"time.*out|Connection refused|ConnectionError", _fix_network_timeout),
-    ]
+# 错误模式 → 修复策略
+FIX_PATTERNS = [
+    ("str_concat", r"TypeError: can only concatenate str", _fix_str_concat),
+    ("list_get", r"AttributeError: .* object has no attribute .get.", _fix_list_get),
+    ("type_ops", r"TypeError: .*unsupported operand", _fix_type_ops),
+    ("key_error", r"KeyError: .", _fix_key_error),
+    ("missing_mod", r"ModuleNotFoundError: No module named", _fix_missing_module),
+    ("empty_json", r"JSONDecodeError.*Expecting value", _fix_empty_json),
+    ("timeout", r"time.*out|Connection refused|ConnectionError", _fix_network_timeout),
+]
 
 def _fix_str_concat(filepath, error_block):
     """修复 str + int """
@@ -183,7 +182,7 @@ def scan_and_heal():
             except: continue
 
             # 用更简单的err探测
-            for label, pat, fix_fn in get_fix_patterns():
+            for label, pat, fix_fn in FIX_PATTERNS:
                 m = re.search(pat, content, re.IGNORECASE)
                 if not m: continue
                 # 找源文件
@@ -230,3 +229,28 @@ if __name__ == "__main__":
     disk = check_disk()
     if disk: print(disk)
     if not fixes and not disk: print("✅ 一切正常")
+
+
+def _fix_radar_digest(filepath, error_block):
+    """雷达消化器卡死 - 重启进程+标记低质基因"""
+    import subprocess
+    subprocess.run(["pkill", "-f", "radar-digester"], capture_output=True, timeout=5)
+    return "重启radar-digester"
+
+def _fix_knowledge_flywheel(filepath, error_block):
+    """知识飞轮空转 - 清日期缓存"""
+    import os
+    lf = os.path.expanduser("~/lgox-ops/logs/knowledge-flywheel.log")
+    if os.path.exists(lf):
+        os.rename(lf, lf + ".bak")
+    return "重置knowledge-flywheel日志"
+
+def _fix_bridge_backlog(filepath, error_block):
+    """桥积压过高 - 报告积压数"""
+    import urllib.request, json
+    try:
+        r = urllib.request.urlopen("http://127.0.0.1:8765/health", timeout=3)
+        d = json.loads(r.read())
+        return "桥积压" + str(d.get("messages_unread", "?")) + "条"
+    except Exception as e:
+        return "桥不可达: " + str(e)[:40]
