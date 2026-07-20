@@ -58,7 +58,7 @@ def fuel_chat(prompt, max_tokens=None, temperature=None):
         try:
             body = json.dumps({'model':'deepseek-v4-flash','messages':[{'role':'user','content':prompt}],
                 'max_tokens':max_tokens or 1024,'temperature':temperature or 0.5}).encode()
-            req = urllib.request.Request('https://api.deepseek.com/v1/chat/completions',
+            req = urllib.request.Request('http://localhost:18666/v1/chat/completions',
                 data=body,headers={'Authorization':f'Bearer {DS_K}','Content-Type':'application/json'})
             d = json.loads(urllib.request.urlopen(req,timeout=15).read())
             return {'answer':d['choices'][0]['message']['content'].strip(),'model':'deepseek-v4-flash',

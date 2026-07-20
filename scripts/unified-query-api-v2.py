@@ -358,7 +358,7 @@ def _llm_answer(query, lge_results, graph_results, onyx_results):
     try:
         import urllib.request as _ur
         req = _ur.Request(
-            "https://api.deepseek.com/v1/chat/completions",
+            "http://localhost:18666/v1/chat/completions",
             data=json.dumps({
                 "model": "deepseek-v4-flash",
                 "messages": [{"role": "user", "content": prompt}],

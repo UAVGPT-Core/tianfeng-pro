@@ -3,7 +3,7 @@
 import urllib.request, json, time
 
 VOD_URL = "https://vod.bj.baidubce.com/v3/chat/oc/v1/chat/completions"
-DS_URL  = "https://api.deepseek.com/v1/chat/completions"
+DS_URL  = "http://localhost:18666/v1/chat/completions"
 
 # Key从文件读·绝对不打印
 VOD_KEY = open("/Users/a112233/.hermes/vod_key.txt").read().strip()

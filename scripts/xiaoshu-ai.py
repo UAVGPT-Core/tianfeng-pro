@@ -22,7 +22,7 @@ if not DEEPSEEK_KEY:
                     DEEPSEEK_KEY = line.split("=",1)[1].strip().strip('"').strip("'")
                     break
     except: pass
-DS_URL = "https://api.deepseek.com/v1/chat/completions"  # 降级备路
+DS_URL = "http://localhost:18666/v1/chat/completions"  # 降级备路
 VOD_KEY = os.getenv("BAIDU_VOD_KEY", "")
 if not VOD_KEY:
     try:
@@ -235,7 +235,7 @@ def _deepseek_stream_sync(messages: list, max_tokens: int = 500):
     }).encode()
     
     ctx = ssl.create_default_context()
-    conn = http.client.HTTPSConnection("api.deepseek.com", timeout=30, context=ctx)
+    conn = http.client.HTTPConnection("localhost", 18666, timeout=30, context=ctx)
     try:
         conn.request("POST", "/v1/chat/completions", body=payload, headers={
             "Content-Type": "application/json",

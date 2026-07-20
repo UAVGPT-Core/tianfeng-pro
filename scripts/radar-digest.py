@@ -8,7 +8,7 @@ import json, os, time, urllib.request
 
 LGE = "http://100.116.0.29:8200"
 RADAR_CACHE = "/tmp/lgox-radar-cache.json"
-DS_API = "https://api.deepseek.com/v1/chat/completions"
+DS_API = "http://localhost:18666/v1/chat/completions"
 DS_KEY = os.popen("grep DEEPSEEK.*KEY ~/ai-gateway/.env 2>/dev/null | head -1").read().strip()
 if DS_KEY:
     DS_KEY = DS_KEY.split("=")[1].strip().strip('"').strip("'")

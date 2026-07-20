@@ -69,7 +69,7 @@ FREE_MODEL_POOL = {
     "deepseek": {
         "name": "DeepSeek Flash",
         "status": "✅(付费兜底)",
-        "endpoint": "https://api.deepseek.com/v1/chat/completions",
+        "endpoint": "http://localhost:18666/v1/chat/completions",
         "model": "deepseek-v4-flash",
         "free_per_day": "付费$0.14/1M",
         "key_env": "DEEPSEEK_API_KEY",

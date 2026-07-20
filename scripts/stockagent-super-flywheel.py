@@ -47,7 +47,7 @@ def check_deepseek():
     """DeepSeek API"""
     try:
         body=json.dumps({'model':'deepseek-v4-flash','messages':[{'role':'user','content':'ping'}],'max_tokens':3})
-        r=urllib.request.urlopen(urllib.request.Request('https://api.deepseek.com/v1/chat/completions',
+        r=urllib.request.urlopen(urllib.request.Request('http://localhost:18666/v1/chat/completions',
             data=body.encode()),timeout=8)
         return '✅'
     except: return '❌'

@@ -7,7 +7,7 @@ import json, subprocess, urllib.request, os, time
 from collections import Counter
 
 LGE = "http://100.116.0.29:8200"
-DS_API = "https://api.deepseek.com/v1/chat/completions"
+DS_API = "http://localhost:18666/v1/chat/completions"
 DS_KEY = ""
 try:
     with open(os.path.expanduser("~/ai-gateway/.env")) as f:

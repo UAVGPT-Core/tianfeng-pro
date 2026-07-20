@@ -42,48 +42,6 @@
     "error": ""
   },
   {
-    "task_id": "8c33db9f",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "40e1d8fb",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "5e5927e4",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "8d93aa4b",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "a987aa87",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "35b73ff5",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
-    "task_id": "39a3a355",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
     "task_id": "129aedf5",
     "status": "skipped",
     "output": "no_action",
@@ -2998,5 +2956,54 @@
     "status": "skipped",
     "output": "no_action",
     "error": ""
+  },
+  {
+    "task_id": "82b926bd",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "82b926bd",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "9432890e",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "82b926bd",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "9432890e",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "82b926bd",
+    "status": "tsf_failed",
+    "output": "/bin/sh: 天锋PRO·30飞轮·216题库·联邦第11节点·金字塔v7.82对齐: command not found\n",
+    "error": "",
+    "exit_code": 127
+  },
+  {
+    "task_id": "9432890e",
+    "status": "tsf_failed",
+    "output": "/bin/sh: {type:: command not found\n",
+    "error": "",
+    "exit_code": 127
   }
 ]
