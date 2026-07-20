@@ -1,34 +1,22 @@
 #!/bin/bash
-# Wrapper to run roundtest continuously through all 100 rounds
-set -e
-PY="/opt/homebrew/bin/python3"
-SCRIPT="/Users/a112233/lgox-ops/scripts/roundtest.py"
-MAX_CYCLES=1  # Run until we complete one full cycle
+# 轮测循环包装器 - 持续运行直到100回合
+cd /Users/a112233/lgox-ops
 
-for cycle in $(seq 1 $MAX_CYCLES); do
-  echo "=== Cycle $cycle ==="
+while true; do
+  # 检查当前回合数
+  if [ -f /tmp/tx-xs-roundtest-state.json ]; then
+    ROUND=$(/opt/homebrew/bin/python3 -c "import json; print(json.load(open('/tmp/tx-xs-roundtest-state.json'))['round'])")
+  else
+    ROUND=0
+  fi
   
-  for i in $(seq 1 100); do
-    $PY "$SCRIPT" 2>&1
-    
-    # Read state after each round
-    state=$(cat /tmp/tx-xs-roundtest-state.json 2>/dev/null || echo '{"round":0}')
-    r=$(echo "$state" | $PY -c "import sys,json; print(json.load(sys.stdin).get('round',0))" 2>/dev/null)
-    
-    # If we wrapped around (round=100 was just completed, now round=1)
-    if [ "$r" -le 1 ] && [ "$i" -gt 2 ]; then
-      echo "=== Cycle COMPLETE! Round reset detected ==="
-      break
-    fi
-    
-    # Brief pause between rounds
-    sleep 1
-  done
+  if [ "$ROUND" -ge 100 ]; then
+    echo "✅ 已完成100回合! 重置..."
+    rm -f /tmp/tx-xs-roundtest-state.json
+  fi
+  
+  /opt/homebrew/bin/python3 scripts/roundtest.py 2>&1
+  LAST_LINE=$(tail -1 /tmp/tx-xs-roundtest.log 2>/dev/null)
+  echo "[$(date '+%H:%M:%S')] $LAST_LINE"
+  sleep 2
 done
-
-echo ""
-echo "=== FINAL STATE ==="
-cat /tmp/tx-xs-roundtest-state.json 2>/dev/null || echo "No state file"
-echo ""
-echo "=== LAST 5 LOG LINES ==="
-tail -5 /tmp/tx-xs-roundtest.log 2>/dev/null || echo "No log file"
