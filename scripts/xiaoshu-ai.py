@@ -22,17 +22,17 @@ if not DEEPSEEK_KEY:
                     DEEPSEEK_KEY = line.split("=",1)[1].strip().strip('"').strip("'")
                     break
     except: pass
-DS_URL = "http://localhost:18666/v1/chat/completions"  # 降级备路
-VOD_KEY = os.getenv("BAIDU_VOD_KEY", "")
-if not VOD_KEY:
+DS_URL = "http://localhost:18666/v1/chat/completions"  # 主路·直连DeepSeek·零溢价
+DS_KEY = os.getenv("DEEPSEEK_API_KEY", "")
+if not DS_KEY:
     try:
         with open(os.path.expanduser("~/.hermes/.env")) as f:
             for line in f:
-                if line.startswith("BAIDU_VOD_KEY="):
-                    VOD_KEY = line.split("=",1)[1].strip().strip('"').strip("'")
+                if "DEEPSEEK_API_KEY" in line:
+                    DS_KEY = line.split("=",1)[1].strip().strip('"').strip("'")
                     break
     except: pass
-VOD_URL = "https://vod.bj.baidubce.com/v3/chat/oc/v1/chat/completions"  # 主路·免费·1.2s
+# VOD已停用(2026-07-21)·价格高于直连DS·改用DS直连
 
 LGE_URL = "http://127.0.0.1:8769/query"
 EVIDENCE_ENABLED = True
@@ -177,21 +177,13 @@ def fetch_evidence(query: str, max_results: int = 3) -> str:
     except: pass
     return ""
 
-# ═══ LLM调用 v2.0·多冗余·DeepSeek→Ollama降级 ═══
+# ═══ LLM调用 v2.1·DS直连·去VOD ═══
 async def call_deepseek(messages: list, max_tokens: int = 500) -> dict:
-    """async-safe·三路降级: VOD(免费)→DeepSeek→Ollama(天工)"""
+    """async-safe·DS直连主路·Ollama天工降级"""
     payload = json.dumps({
         "model": "deepseek-v4-flash", "messages": messages,
         "max_tokens": max_tokens, "temperature": 0.4, "stream": False
     }).encode()
-    
-    def _vod():
-        req = urllib.request.Request(VOD_URL, data=payload, headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {VOD_KEY}"
-        })
-        with urllib.request.urlopen(req, timeout=25) as r:
-            return json.loads(r.read())
     
     def _ds():
         req = urllib.request.Request(DS_URL, data=payload, headers={
@@ -201,12 +193,11 @@ async def call_deepseek(messages: list, max_tokens: int = 500) -> dict:
         with urllib.request.urlopen(req, timeout=25) as r:
             return json.loads(r.read())
     
-    # VOD优先(免费快)→DS Flash→Ollama天工
-    for fn in [_vod, _ds]:
-        try:
-            return await asyncio.to_thread(fn)
-        except Exception:
-            continue
+    # DS直连优先→Ollama天工降级
+    try:
+        return await asyncio.to_thread(_ds)
+    except Exception:
+        pass
     try:
         def _ollama():
             ol_payload = json.dumps({
@@ -369,12 +360,12 @@ async def chat(request: Request):
                 try:
                     decode_name = target_name or (matched_quotes[0].get("name","") if matched_quotes else question[:10])
                     insight_prompt = f"{decode_name}行情:{market_lines[0][:100]},用一句话总结(15字内)"
-                    ins_req = urllib.request.Request(VOD_URL,
+                    ins_req = urllib.request.Request(DS_URL,
                         data=json.dumps({"model":"deepseek-v4-flash","messages":[
                             {"role":"system","content":"小枢超超极AI·精准总结·不超过15字·只说事实"},
                             {"role":"user","content":insight_prompt}
                         ],"max_tokens":32,"temperature":0.1}).encode(),
-                        headers={"Content-Type":"application/json","Authorization":"Bearer "+VOD_KEY})
+                        headers={"Content-Type":"application/json","Authorization":"Bearer "+DEEPSEEK_KEY})
                     ins_resp = urllib.request.urlopen(ins_req, timeout=10)
                     insight = json.loads(ins_resp.read()).get("choices",[{}])[0].get("message",{}).get("content","")
                     if insight: market_context += f"🧠 小枢解读: {insight.strip()}\n"
