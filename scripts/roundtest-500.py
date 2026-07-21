@@ -175,7 +175,7 @@ def run():
         if r % 50 == 0 or r <= 5:
             print(f"[{datetime.now().strftime('%H%M%S')}] 轮{r:3d}/{ROUNDS} | 小枢{x_s:3d} 天巡{t_s:3d} | {reason[:40]}")
         
-        time.sleep(1.5)
+        time.sleep(5)  # NGC限流保护·每轮5秒间隔
     
     # ═══ 终局 ═══
     x_avg = x_score // ROUNDS
