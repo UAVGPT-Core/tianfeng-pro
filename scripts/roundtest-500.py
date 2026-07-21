@@ -6,7 +6,7 @@
 ║  主人休·轮测启                                                ║
 ╚══════════════════════════════════════════════════════════════╝
 """
-import urllib.request, json, time, sqlite3, os, random
+import urllib.request, urllib.error, json, time, sqlite3, os, random
 from datetime import datetime
 
 NGC_KEY = "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"
@@ -46,7 +46,7 @@ TOPICS = [
 ]
 
 def ngc_chat(system_prompt, user_msg, max_tokens=400, temp=0.7):
-    """NGC API调用"""
+    """NGC API调用·429自愈重试"""
     body = json.dumps({
         "model": "meta/llama-3.1-8b-instruct",
         "messages": [
@@ -55,10 +55,24 @@ def ngc_chat(system_prompt, user_msg, max_tokens=400, temp=0.7):
         ],
         "max_tokens": max_tokens, "temperature": temp
     }).encode()
-    req = urllib.request.Request(NGC_API, data=body,
-        headers={"Authorization": "Bearer " + NGC_KEY, "Content-Type": "application/json"})
-    d = json.loads(urllib.request.urlopen(req, timeout=30).read())
-    return d["choices"][0]["message"]["content"].strip(), d["usage"]["total_tokens"]
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(NGC_API, data=body,
+                headers={"Authorization": "Bearer " + NGC_KEY, "Content-Type": "application/json"})
+            d = json.loads(urllib.request.urlopen(req, timeout=30).read())
+            return d["choices"][0]["message"]["content"].strip(), d["usage"]["total_tokens"]
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                wait = (attempt + 1) * 5
+                print(f"  ⚠️ 429限流·等{wait}s重试...")
+                time.sleep(wait)
+            else:
+                raise
+        except Exception:
+            if attempt < 2:
+                time.sleep(3)
+            else:
+                return f"[NGC不可用: 已重试3次]", 0
 
 def ngc_judge(question, xiaoshu_ans, tianxun_ans, topic):
     """NGC裁判评分 0-100"""
