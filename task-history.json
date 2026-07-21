@@ -1,11 +1,5 @@
 [
   {
-    "task_id": "15514775",
-    "status": "skipped",
-    "output": "no_action",
-    "error": ""
-  },
-  {
     "task_id": "a33d3b43",
     "status": "skipped",
     "output": "no_action",
@@ -3007,5 +3001,11 @@
     "output": "/bin/sh: {type:: command not found\n",
     "error": "",
     "exit_code": 127
+  },
+  {
+    "task_id": "ab0e90e4",
+    "status": "skipped",
+    "output": "no_action",
+    "error": ""
   }
 ]
