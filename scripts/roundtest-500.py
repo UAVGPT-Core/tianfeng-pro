@@ -63,16 +63,16 @@ def ngc_chat(system_prompt, user_msg, max_tokens=400, temp=0.7):
             return d["choices"][0]["message"]["content"].strip(), d["usage"]["total_tokens"]
         except urllib.error.HTTPError as e:
             if e.code == 429:
-                wait = (attempt + 1) * 5
-                print(f"  ⚠️ 429限流·等{wait}s重试...")
+                wait = (attempt + 1) * 8  # 更长的等待
+                print(f"  ⚠️ 429·等{wait}s...", end="", flush=True)
                 time.sleep(wait)
             else:
                 raise
         except Exception:
             if attempt < 2:
                 time.sleep(3)
-            else:
-                return f"[NGC不可用: 已重试3次]", 0
+    # 3次重试全失败→返回占位
+    return f"[NGC429:已等{(1+2+3)*8}s]", 0
 
 def ngc_judge(question, xiaoshu_ans, tianxun_ans, topic):
     """NGC裁判评分 0-100"""
