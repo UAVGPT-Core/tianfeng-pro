@@ -155,11 +155,12 @@ def call_ollama_dgx(model, prompt, system="", temp=0.3, max_tokens=1024):
     for attempt in range(max_retries + 1):
         try:
             # heredoc<<'EOF'防止shell扩展，绕过SSH stdin pipe不可靠问题
-            remote_cmd = f"curl -s --max-time 50 -d @- http://localhost:11434/api/generate <<'EOF'\n{json_str}\nEOF"
+            # max-time 90 + subprocess 95: model swap on DGX1 can take 30s+
+            remote_cmd = f"curl -s --max-time 90 -d @- http://localhost:11434/api/generate <<'EOF'\n{json_str}\nEOF"
             r = subprocess.run(
                 ["ssh", "-o", "ConnectTimeout=3",
                  "-o", "StrictHostKeyChecking=no", "dgx1", remote_cmd],
-                capture_output=True, text=True, timeout=55)
+                capture_output=True, text=True, timeout=95)
             
             if not r.stdout or not r.stdout.strip():
                 if attempt < max_retries:
