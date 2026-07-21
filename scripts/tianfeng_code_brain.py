@@ -141,22 +141,25 @@ def call_ollama_local(model, prompt, system="", temp=0.3, max_tokens=2048):
 
 
 def call_ollama_dgx(model, prompt, system="", temp=0.3, max_tokens=1024):
-    """通过SSH调用天工Ollama — 带重试+keep_alive·防空响应"""
+    """通过SSH调用天工Ollama — base64编码避免shell转义·重试·keep_alive"""
     payload = {"model": model, "prompt": prompt, "stream": False,
                "options": {"temperature": temp, "num_predict": max_tokens},
                "keep_alive": -1}  # 永久驻留内存，避免冷启动
     if system:
         payload["system"] = system
 
-    import time
+    import time, base64
+    json_str = json.dumps(payload)
+    b64 = base64.b64encode(json_str.encode()).decode()
+    
     max_retries = 2
     for attempt in range(max_retries + 1):
         try:
+            # base64编码绕过shell转义问题（-d @- stdin pipe在SSH中不可靠）
+            remote_cmd = f"echo {b64} | base64 -d | curl -s --max-time 50 -d @- http://localhost:11434/api/generate"
             r = subprocess.run(
-                ["ssh", "-o", "ConnectTimeout=3", "-o", "IdentitiesOnly=yes",
-                 "-o", "StrictHostKeyChecking=no", "dgx1",
-                 "curl -s --max-time 50 -d @- http://localhost:11434/api/generate"],
-                input=json.dumps(payload),
+                ["ssh", "-o", "ConnectTimeout=3",
+                 "-o", "StrictHostKeyChecking=no", "dgx1", remote_cmd],
                 capture_output=True, text=True, timeout=55)
             
             if not r.stdout or not r.stdout.strip():
